@@ -61,6 +61,7 @@ const Login = () => {
                                 className="input-field"
                                 value={formData.email}
                                 onChange={handleChange}
+                                autoComplete="username email"
                             />
                         </div>
 
@@ -75,6 +76,7 @@ const Login = () => {
                                 className="input-field"
                                 value={formData.password}
                                 onChange={handleChange}
+                                autoComplete="current-password"
                             />
                         </div>
 

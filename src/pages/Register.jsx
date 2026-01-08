@@ -95,6 +95,7 @@ const Register = () => {
                                     className="input-field"
                                     value={formData.firstName}
                                     onChange={handleChange}
+                                    autoComplete="given-name"
                                 />
                             </div>
                             <div>
@@ -108,6 +109,7 @@ const Register = () => {
                                     className="input-field"
                                     value={formData.lastName}
                                     onChange={handleChange}
+                                    autoComplete="family-name"
                                 />
                             </div>
                         </div>
@@ -123,6 +125,7 @@ const Register = () => {
                                 className="input-field"
                                 value={formData.email}
                                 onChange={handleChange}
+                                autoComplete="email"
                             />
                         </div>
 
@@ -138,6 +141,7 @@ const Register = () => {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder="Ej: 999 999 999"
+                                autoComplete="tel"
                             />
                         </div>
 
@@ -182,6 +186,7 @@ const Register = () => {
                                     className="input-field"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    autoComplete="new-password"
                                 />
                             </div>
                             <div>
@@ -195,6 +200,7 @@ const Register = () => {
                                     className="input-field"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
+                                    autoComplete="new-password"
                                 />
                             </div>
                         </div>
