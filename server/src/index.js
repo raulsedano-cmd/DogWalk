@@ -20,6 +20,9 @@ import { errorHandler } from './middleware/error.middleware.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for rate limiting on Render
+app.set('trust proxy', 1);
+
 // Middleware
 const allowedOrigins = [
     process.env.CORS_ORIGIN,

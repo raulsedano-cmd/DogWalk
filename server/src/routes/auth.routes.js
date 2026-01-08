@@ -5,12 +5,12 @@ import { authLimiter } from '../middleware/rate-limit.middleware.js';
 
 const router = express.Router();
 
-router.post('/register', authLimiter, register);
-router.post('/login', authLimiter, login);
+router.post('/register', register);
+router.post('/login', login);
 
 // Social Auth
-router.post('/google', authLimiter, googleLogin);
-router.post('/facebook', authLimiter, facebookLogin);
-router.post('/microsoft', authLimiter, microsoftLogin);
+router.post('/google', googleLogin);
+router.post('/facebook', facebookLogin);
+router.post('/microsoft', microsoftLogin);
 
 export default router;
