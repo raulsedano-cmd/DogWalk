@@ -63,8 +63,8 @@ const SocialLogin = () => {
                         onError={() => {
                             setError('Error con Google. Inténtalo de nuevo.');
                         }}
-                        useOneTap
-                        width="100%"
+                        useOneTap={false}
+                        width="300"
                         theme="outline"
                         shape="pill"
                         text="continue_with"
