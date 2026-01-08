@@ -1,0 +1,410 @@
+# DogWalk API - Ejemplos de Peticiones
+# Puedes usar esta archivo con la extensión REST Client de VS Code
+# o copiar los ejemplos a herramientas como Postman o cURL
+
+@baseUrl = http://localhost:3000/api
+@token = YOUR_JWT_TOKEN_HERE
+
+### ============================================
+### AUTHENTICATION
+### ============================================
+
+### Register as OWNER
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "nuevo.dueno@example.com",
+  "password": "password123",
+  "firstName": "Nuevo",
+  "lastName": "Dueño",
+  "phone": "+52 55 9999 8888",
+  "role": "OWNER",
+  "city": "Ciudad de México",
+  "zone": "Coyoacán",
+  "bio": "Amante de los perros"
+}
+
+### Register as WALKER
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "nuevo.paseador@example.com",
+  "password": "password123",
+  "firstName": "Nuevo",
+  "lastName": "Paseador",
+  "phone": "+52 55 7777 6666",
+  "role": "WALKER",
+  "city": "Ciudad de México",
+  "zone": "Condesa",
+  "bio": "Experiencia de 3 años paseando perros. Responsable y confiable."
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "maria@example.com",
+  "password": "password123"
+}
+
+### Google Login/Register
+# Frontend creates idToken after user grants permission
+POST {{baseUrl}}/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "YOUR_GOOGLE_ID_TOKEN_HERE"
+}
+
+### Facebook Login/Register
+# Frontend creates accessToken (idToken) after user grants permission
+POST {{baseUrl}}/auth/facebook
+Content-Type: application/json
+
+{
+  "idToken": "YOUR_FACEBOOK_ACCESS_TOKEN_HERE"
+}
+
+### Microsoft Login/Register
+# Frontend creates idToken after user grants permission
+POST {{baseUrl}}/auth/microsoft
+Content-Type: application/json
+
+{
+  "idToken": "YOUR_MICROSOFT_ID_TOKEN_HERE"
+}
+
+
+### ============================================
+### USERS
+### ============================================
+
+### Get My Profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Update My Profile
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "María",
+  "lastName": "García Actualizado",
+  "phone": "+52 55 1111 2222",
+  "city": "Ciudad de México",
+  "zone": "Roma Norte",
+  "bio": "Dueña responsable de 2 perros adorables"
+}
+
+### Get User by ID (Public Profile)
+GET {{baseUrl}}/users/USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### DOGS (OWNER only)
+### ============================================
+
+### Get My Dogs
+GET {{baseUrl}}/dogs
+Authorization: Bearer {{token}}
+
+### Create Dog
+POST {{baseUrl}}/dogs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Firulais",
+  "size": "MEDIUM",
+  "breed": "Beagle",
+  "behavior": "Muy sociable y juguetón",
+  "age": 3,
+  "energyLevel": "HIGH",
+  "reactiveWithDogs": false,
+  "needsMuzzle": false,
+  "pullsLeash": true,
+  "notesForWalker": "Se emociona mucho al ver otros perros, pero no es agresivo."
+}
+
+### Update Dog
+PUT {{baseUrl}}/dogs/DOG_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Firulais Jr",
+  "behavior": "Más tranquilo",
+  "energyLevel": "MEDIUM",
+  "pullsLeash": false
+}
+
+### Upload Dog Photo
+POST {{baseUrl}}/dogs/DOG_ID_HERE/photo
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="perro.jpg"
+Content-Type: image/jpeg
+
+< ./dog_example.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Delete Dog
+DELETE {{baseUrl}}/dogs/DOG_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### WALK REQUESTS
+### ============================================
+
+### List Walk Requests (with pagination and filters)
+# For WALKER: shows only OPEN requests
+# For OWNER: shows their own requests
+GET {{baseUrl}}/walk-requests?page=1&limit=10&city=Ciudad de México&zone=Condesa&size=MEDIUM
+Authorization: Bearer {{token}}
+
+### Get Walk Request by ID
+GET {{baseUrl}}/walk-requests/REQUEST_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create Walk Request (OWNER only)
+POST {{baseUrl}}/walk-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dogId": "DOG_ID_HERE",
+  "date": "2026-01-15",
+  "startTime": "10:00",
+  "durationMinutes": 45,
+  "zone": "Parque México, Condesa",
+  "suggestedPrice": 200,
+  "details": "Mi perro necesita correr mucho, preferible en zona abierta"
+}
+
+### Update Walk Request (OWNER only)
+PUT {{baseUrl}}/walk-requests/REQUEST_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "startTime": "11:00",
+  "suggestedPrice": 250
+}
+
+### Cancel Walk Request (OWNER only)
+DELETE {{baseUrl}}/walk-requests/REQUEST_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### OFFERS
+### ============================================
+
+### Get Offers for Walk Request (OWNER only)
+GET {{baseUrl}}/offers/walk-request/REQUEST_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create Offer (WALKER only)
+POST {{baseUrl}}/offers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walkRequestId": "REQUEST_ID_HERE",
+  "offeredPrice": 180,
+  "message": "Hola! Vivo cerca del parque México y tengo 5 años de experiencia. Puedo ofrecerte este precio."
+}
+
+### Accept Offer (OWNER only)
+# This will: accept the offer, reject other offers, create assignment, update request status
+PUT {{baseUrl}}/offers/OFFER_ID_HERE/accept
+Authorization: Bearer {{token}}
+
+### Reject Offer (OWNER only)
+PUT {{baseUrl}}/offers/OFFER_ID_HERE/reject
+Authorization: Bearer {{token}}
+
+### Start Walk (WALKER only)
+PUT {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/start
+Authorization: Bearer {{token}}
+
+### Cancel Walk (WALKER only)
+PUT {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "El perro se siente mal y prefiero no seguir el paseo."
+}
+
+### Complete Walk (WALKER only)
+# Includes report data and early end reason if applicable
+PUT {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "didPee": true,
+  "didPoop": false,
+  "behaviorRating": "NORMAL",
+  "reportNotes": "Estuvo muy tranquilo, jugamos un poco en el césped.",
+  "earlyEndReason": "Empezó a llover fuerte y decidimos volver por seguridad."
+}
+
+### Upload Walk Photos (WALKER only)
+POST {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/photos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="photos"; filename="walk1.jpg"
+Content-Type: image/jpeg
+
+<binary data>
+--boundary--
+
+### Get Walk Photos
+GET {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/photos
+Authorization: Bearer {{token}}
+
+### Mark Paid (OWNER only)
+PUT {{baseUrl}}/walk-assignments/ASSIGNMENT_ID_HERE/mark-paid
+Authorization: Bearer {{token}}
+
+### Walker Payments & Earnings Report (WALKER only)
+GET {{baseUrl}}/walker/payments?from=2026-01-01&to=2026-01-31&onlyPending=false&page=1
+Authorization: Bearer {{token}}
+
+### ============================================
+### REVIEWS
+### ============================================
+
+### Create Review (OWNER only)
+# Can only review COMPLETED assignments
+# One review per assignment
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walkAssignmentId": "ASSIGNMENT_ID_HERE",
+  "rating": 5,
+  "comment": "Excelente paseador! Mi perro llegó muy feliz y cansado. Muy recomendable."
+}
+
+### Get Walker Reviews (with pagination)
+GET {{baseUrl}}/reviews/walker/WALKER_ID_HERE?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### ============================================
+### HEALTH CHECK
+### ============================================
+
+### Health Check (no auth required)
+GET {{baseUrl}}/../health
+
+### ============================================
+### LEGAL COMPLIANCE
+### ============================================
+
+### Get Legal Status
+GET {{baseUrl}}/legal/status
+Authorization: Bearer {{token}}
+
+### Accept Terms and Conditions
+POST {{baseUrl}}/legal/accept
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "termsVersion": "1.0 - Enero 2026"
+}
+
+### ============================================
+### WALKER VERIFICATION
+### ============================================
+
+### Get Verification Status
+GET {{baseUrl}}/walker-verification/status
+Authorization: Bearer {{token}}
+
+### Submit Verification (Multipart/form-data)
+# Note: This is an example, real files must be uploaded via Form-data in Postman/Client
+POST {{baseUrl}}/walker-verification
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="dniNumber"
+
+12345678
+--boundary
+Content-Disposition: form-data; name="dniFrontPhoto"; filename="front.jpg"
+Content-Type: image/jpeg
+
+<binary data>
+--boundary
+Content-Disposition: form-data; name="dniBackPhoto"; filename="back.jpg"
+Content-Type: image/jpeg
+
+<binary data>
+--boundary--
+
+### ============================================
+### SUPPORT & REPORTING
+### ============================================
+
+### Get My Support Tickets
+GET {{baseUrl}}/support/tickets
+Authorization: Bearer {{token}}
+
+### Create Support Ticket
+POST {{baseUrl}}/support/tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category": "SECURITY",
+  "subject": "Incidente en el parque",
+  "description": "Hubo un problema con otra persona durante el paseo..."
+}
+
+
+### ============================================
+### EXAMPLE FLOWS
+### ============================================
+
+### FLOW 1: Complete Owner Journey
+# 1. Register as owner (see above)
+# 2. Login and save token
+# 3. Create a dog
+# 4. Create walk request
+# 5. View offers for request
+# 6. Accept an offer
+# 7. After walker completes: create review
+
+### FLOW 2: Complete Walker Journey
+# 1. Register as walker (see above)
+# 2. Login and save token
+# 3. Browse available walk requests with filters
+# 4. Create offer on a request
+# 5. View my assignments (after offer is accepted)
+# 6. Update assignment status to COMPLETED
+
+### ============================================
+### NOTES
+### ============================================
+
+# - Replace {{token}} with actual JWT token from login response
+# - Replace IDs (USER_ID_HERE, DOG_ID_HERE, etc.) with actual IDs
+# - All authenticated requests require Authorization header
+# - OWNER can only manage their own dogs and requests
+# - WALKER can only create offers on OPEN requests
+# - Dates must be in YYYY-MM-DD format
+# - Times must be in HH:MM format (24-hour)
+# - Pagination: page starts at 1, default limit is 10

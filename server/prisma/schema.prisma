@@ -1,0 +1,406 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  firstName     String
+  lastName      String
+  phone         String
+  role          UserRole
+  city          String
+  zone          String
+  bio           String?   @db.Text
+  averageRating Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // OAuth Support
+  authProvider   AuthProvider @default(LOCAL)
+  providerUserId String?
+  emailVerified  Boolean      @default(false)
+
+  // Location
+  latitude         Float?
+  longitude        Float?
+
+  // Extended Walker Profile
+  profilePhotoUrl String?
+  isVerifiedWalker Boolean @default(false)
+  isAvailable      Boolean @default(true)
+  baseCity         String?
+  baseZone         String?
+  addressType      String?  
+  addressReference String?  @db.Text 
+  serviceRadiusKm  Int     @default(5)
+  experienceText   String? @db.Text
+  acceptsSmall     Boolean @default(true)
+  acceptsMedium    Boolean @default(true)
+  acceptsLarge     Boolean @default(true)
+  maxDogsAtOnce    Int     @default(1)
+
+  // LEGAL & VERIFICATION (Peru Compliance)
+  dniNumber        String?   @unique // 8 digits for Peru
+  dniFrontPhotoUrl String?
+  dniBackPhotoUrl  String?
+  verificationStatus VerificationStatus @default(PENDING)
+  termsAccepted    Boolean @default(false)
+
+  // Relations
+  dogs            Dog[]
+  walkRequests    WalkRequest[]
+  offers          Offer[]
+  walkAssignments WalkAssignment[]   
+  
+  // Review relations
+  reviewsReceived Review[]           
+  reviewsGiven    Review[]           @relation("ReviewAuthor") 
+
+  // Social Relations
+  favorites       FavoriteWalker[] @relation("OwnerFavorites")
+  favoritedBy     FavoriteWalker[] @relation("WalkerFavorited")
+  blockedWalkers  BlockedWalker[]  @relation("OwnerBlocked")
+  blockedBy       BlockedWalker[]  @relation("WalkerBlocked")
+
+  // Messages
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications    Notification[]
+
+  // Legal & Support
+  legalAcceptances LegalAcceptance[]
+  supportTickets   SupportTicket[]
+  
+  @@unique([authProvider, providerUserId])
+  @@index([city, zone])
+  @@index([role])
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  FACEBOOK
+  MICROSOFT
+}
+
+// Legal Acceptance model
+model LegalAcceptance {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termsVersion String
+  acceptedAt   DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+
+  @@index([userId])
+}
+
+// Support Ticket model
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String   // Seguridad, Incidente, Pago, Otro
+  subject     String
+  description String   @db.Text
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, CLOSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// Dog model
+model Dog {
+  id           String        @id @default(uuid())
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String
+  size         DogSize
+  breed        String?
+  photoUrl     String?
+  behavior     String?
+  age          Int?
+  
+  // Manejo durante el paseo (CRÍTICOS)
+  energyLevel      EnergyLevel @default(MEDIUM)
+  reactiveWithDogs Boolean     @default(false)
+  reactiveWithPeople Boolean   @default(false)
+  needsMuzzle      Boolean     @default(false)
+  pullsLeash       Boolean     @default(false)
+  
+  // Notas clave
+  notesForWalker String?       @db.Text
+  specialNotes   String?       @db.Text // Legacy
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  walkRequests WalkRequest[]
+  
+  @@index([ownerId])
+}
+
+// Walk Request model
+model WalkRequest {
+  id              String            @id @default(uuid())
+  ownerId         String
+  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  dogId           String
+  dog             Dog               @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date            DateTime
+  startTime       String
+  durationMinutes Int
+  zone            String
+  suggestedPrice  Float
+  details         String?           @db.Text
+  status          WalkRequestStatus @default(OPEN)
+  
+  // Location
+  latitude         Float?
+  longitude        Float?
+  country          String?
+  city             String?
+  addressType      String?  
+  addressReference String?  @db.Text 
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  offers     Offer[]
+  assignment WalkAssignment?
+  messages   Message[]
+  
+  @@index([ownerId])
+  @@index([status, date])
+  @@index([zone])
+}
+
+// Offer model
+model Offer {
+  id            String      @id @default(uuid())
+  walkRequestId String
+  walkRequest   WalkRequest @relation(fields: [walkRequestId], references: [id], onDelete: Cascade)
+  walkerId      String
+  walker        User        @relation(fields: [walkerId], references: [id], onDelete: Cascade)
+  offeredPrice  Float
+  message       String?     @db.Text
+  status        OfferStatus @default(PENDING)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([walkRequestId, walkerId])
+  @@index([walkRequestId])
+  @@index([walkerId])
+}
+
+// Walk Assignment model
+model WalkAssignment {
+  id              String               @id @default(uuid())
+  walkRequestId   String               @unique
+  walkRequest     WalkRequest          @relation(fields: [walkRequestId], references: [id], onDelete: Cascade)
+  walkerId        String
+  walker          User                 @relation(fields: [walkerId], references: [id], onDelete: Cascade)
+  status          WalkAssignmentStatus @default(PENDING)
+  actualStartTime DateTime?
+  actualEndTime   DateTime?
+  actualDurationMinutes Int?
+  
+  // Walk Report
+  didPee          Boolean   @default(false)
+  didPoop         Boolean   @default(false)
+  behaviorRating  String?   // BUENO, NORMAL, DIFICIL
+  reportNotes     String?   @db.Text
+  earlyEndReason  String?   @db.Text
+
+  // Cancellation
+  cancelledBy     String?   // WALKER, OWNER
+  cancelReason    String?   @db.Text
+  cancelledAt     DateTime?
+
+  // Payment Tracking (External)
+  agreedPrice     Float
+  paymentMethod   PaymentMethod @default(OTHER)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  paidAt          DateTime?
+
+  // Platform Commission
+  platformFeeRate     Float             @default(0.15)
+  platformFeeAmount   Float             @default(0)
+  platformFeeStatus   PlatformFeeStatus @default(DUE)
+  platformFeeSettledAt DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  review Review?
+  photos WalkPhoto[]
+  
+  @@index([walkerId])
+  @@index([status])
+}
+
+model WalkPhoto {
+  id               String         @id @default(uuid())
+  walkAssignmentId String
+  walkAssignment   WalkAssignment @relation(fields: [walkAssignmentId], references: [id], onDelete: Cascade)
+  uploaderId       String
+  url              String
+  createdAt        DateTime       @default(now())
+
+  @@index([walkAssignmentId])
+}
+
+// Review model
+model Review {
+  id               String         @id @default(uuid())
+  walkAssignmentId String         @unique
+  walkAssignment   WalkAssignment @relation(fields: [walkAssignmentId], references: [id], onDelete: Cascade)
+  authorId         String
+  author           User           @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  walkerId         String? 
+  walker           User?   @relation(fields: [walkerId], references: [id])
+  rating           Int 
+  comment          String? @db.Text
+  createdAt        DateTime       @default(now())
+  
+  @@index([authorId])
+  @@index([walkerId])
+}
+
+// Social Models
+model FavoriteWalker {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation("OwnerFavorites", fields: [ownerId], references: [id], onDelete: Cascade)
+  walkerId  String
+  walker    User     @relation("WalkerFavorited", fields: [walkerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, walkerId])
+  @@index([ownerId])
+}
+
+model BlockedWalker {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation("OwnerBlocked", fields: [ownerId], references: [id], onDelete: Cascade)
+  walkerId  String
+  walker    User     @relation("WalkerBlocked", fields: [walkerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, walkerId])
+  @@index([ownerId])
+}
+
+// Reporting Models
+model Message {
+  id            String      @id @default(uuid())
+  walkRequestId String
+  walkRequest   WalkRequest @relation(fields: [walkRequestId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId    String
+  receiver      User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content       String      @db.Text
+  createdAt     DateTime    @default(now())
+  
+  @@index([walkRequestId])
+}
+
+// Enums
+enum UserRole {
+  OWNER
+  WALKER
+}
+
+enum DogSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum WalkRequestStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum WalkAssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?          
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+enum NotificationType {
+  WALK_REQUEST_CREATED
+  OFFER_RECEIVED
+  OFFER_ACCEPTED
+  WALK_ASSIGNED
+  WALK_CANCELLED
+  WALK_STARTED
+  WALK_COMPLETED
+  REVIEW_RECEIVED
+}
+
+enum EnergyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+enum PlatformFeeStatus {
+  DUE
+  SETTLED
+}

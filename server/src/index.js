@@ -1,0 +1,59 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import authRoutes from './routes/auth.routes.js';
+import usersRoutes from './routes/users.routes.js';
+import dogsRoutes from './routes/dogs.routes.js';
+import walkRequestsRoutes from './routes/walk-requests.routes.js';
+import offersRoutes from './routes/offers.routes.js';
+import walkAssignmentsRoutes from './routes/walk-assignments.routes.js';
+import reviewsRoutes from './routes/reviews.routes.js';
+import socialRoutes from './routes/social.routes.js';
+import messageRoutes from './routes/messages.routes.js';
+import notificationRoutes from './routes/notifications.routes.js';
+import legalRoutes from './routes/legal.routes.js';
+import walkerVerificationRoutes from './routes/walker-verification.routes.js';
+import supportRoutes from './routes/support.routes.js';
+import walkerRoutes from './routes/walker.routes.js';
+import { errorHandler } from './middleware/error.middleware.js';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true
+}));
+app.use(express.json());
+app.use('/uploads', express.static('uploads'));
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Dog Walking API is running' });
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/dogs', dogsRoutes);
+app.use('/api/walk-requests', walkRequestsRoutes);
+app.use('/api/offers', offersRoutes);
+app.use('/api/walk-assignments', walkAssignmentsRoutes);
+app.use('/api/reviews', reviewsRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/legal', legalRoutes);
+app.use('/api/walker-verification', walkerVerificationRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/walker', walkerRoutes);
+
+// Error handler (must be last)
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+});
