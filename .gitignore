@@ -30,6 +30,12 @@ yarn-error.log*
 *.dll
 *.node
 
+# Firebase
+firebase.json
+.firebase/
+.firebaserc
+/functions/node_modules/
+
 # IDE
 .vscode/
 .idea/

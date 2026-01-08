@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Sanitize BASE_URL to avoid double /api or trailing slashes
-let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 if (rawBaseUrl.endsWith('/')) rawBaseUrl = rawBaseUrl.slice(0, -1);
 if (rawBaseUrl.endsWith('/api')) rawBaseUrl = rawBaseUrl.slice(0, -4);
 
