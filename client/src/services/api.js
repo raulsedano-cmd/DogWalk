@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'; // Current backend URL
+// Sanitize BASE_URL to avoid double /api or trailing slashes
+let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+if (rawBaseUrl.endsWith('/')) rawBaseUrl = rawBaseUrl.slice(0, -1);
+if (rawBaseUrl.endsWith('/api')) rawBaseUrl = rawBaseUrl.slice(0, -4);
+
+export const BASE_URL = rawBaseUrl;
 
 const api = axios.create({
     baseURL: `${BASE_URL}/api`,
