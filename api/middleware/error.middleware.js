@@ -22,7 +22,10 @@ export const errorHandler = (err, req, res, next) => {
     }
 
     // Default error
+    console.error('SERVER ERROR:', err.stack || err);
     res.status(err.status || 500).json({
         error: err.message || 'Internal server error',
+        debug: process.env.NODE_ENV === 'development' || !process.env.VERCEL ? err : undefined,
+        details: err.stack ? 'Check server logs' : undefined
     });
 };
