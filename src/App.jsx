@@ -24,6 +24,7 @@ import Payments from './pages/Payments';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import RoleSelection from './pages/RoleSelection';
+import SavedAddresses from './pages/SavedAddresses';
 
 const HomeRoute = () => {
     const { isAuthenticated, user } = useAuth();
@@ -78,6 +79,16 @@ function App() {
                                             <ProtectedRoute>
                                                 <LegalRedirect>
                                                     <OwnerDashboard />
+                                                </LegalRedirect>
+                                            </ProtectedRoute>
+                                        }
+                                    />
+                                    <Route
+                                        path="/owner/saved-addresses"
+                                        element={
+                                            <ProtectedRoute>
+                                                <LegalRedirect>
+                                                    <SavedAddresses />
                                                 </LegalRedirect>
                                             </ProtectedRoute>
                                         }

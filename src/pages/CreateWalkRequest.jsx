@@ -8,6 +8,8 @@ const CreateWalkRequest = () => {
     const location = useLocation();
     const [dogs, setDogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [showAddresses, setShowAddresses] = useState(false);
 
     const initialRequest = location.state?.originalRequest;
 
@@ -29,6 +31,7 @@ const CreateWalkRequest = () => {
 
     useEffect(() => {
         loadDogs();
+        loadSavedAddresses();
     }, []);
 
     const loadDogs = async () => {
@@ -50,6 +53,35 @@ const CreateWalkRequest = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadSavedAddresses = async () => {
+        try {
+            const response = await api.get('/saved-addresses');
+            setSavedAddresses(response.data);
+
+            // Optional: Auto-select default if form is empty
+            const defaultAddress = response.data.find(addr => addr.isDefault);
+            if (defaultAddress && !initialRequest && !formData.latitude) {
+                handleSelectAddress(defaultAddress);
+            }
+        } catch (error) {
+            console.error('Error loading addresses:', error);
+        }
+    };
+
+    const handleSelectAddress = (address) => {
+        setFormData(prev => ({
+            ...prev,
+            latitude: address.latitude,
+            longitude: address.longitude,
+            city: address.city,
+            zone: address.zone,
+            country: address.country || 'Peru',
+            addressType: address.addressType || 'Casa',
+            addressReference: address.addressReference || ''
+        }));
+        setShowAddresses(false);
     };
 
     const handleSubmit = async (e) => {
@@ -171,9 +203,46 @@ const CreateWalkRequest = () => {
 
                     {/* Precise Location */}
                     <div className="bg-gray-50 p-4 rounded-lg">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                            3. Ubicación Exacta de Recogida
-                        </label>
+                        <div className="flex justify-between items-center mb-3">
+                            <label className="block text-sm font-semibold text-gray-700">
+                                3. Ubicación Exacta de Recogida
+                            </label>
+                            {savedAddresses.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddresses(!showAddresses)}
+                                    className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
+                                >
+                                    📍 Usar dirección guardada
+                                </button>
+                            )}
+                        </div>
+
+                        {showAddresses && (
+                            <div className="mb-4 bg-white border border-blue-200 rounded-lg p-3 animate-fade-in">
+                                <p className="text-xs text-slate-500 mb-2 font-medium uppercase">Selecciona una dirección:</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {savedAddresses.map(addr => (
+                                        <button
+                                            key={addr.id}
+                                            type="button"
+                                            onClick={() => handleSelectAddress(addr)}
+                                            className="text-left px-3 py-2 hover:bg-blue-50 rounded-md border border-gray-100 flex items-center justify-between group"
+                                        >
+                                            <div>
+                                                <span className="font-semibold text-sm block">{addr.name}</span>
+                                                <span className="text-xs text-gray-500 truncate block max-w-[200px]">
+                                                    {addr.address}
+                                                </span>
+                                            </div>
+                                            <span className="text-blue-600 opacity-0 group-hover:opacity-100 text-sm">
+                                                Seleccionar →
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <LocationPicker
                             label="Punto en el Mapa"

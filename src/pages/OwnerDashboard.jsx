@@ -49,7 +49,10 @@ const OwnerDashboard = () => {
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-800">Mis Solicitudes de Paseo</h1>
-                <div className="flex w-full sm:w-auto gap-2">
+                <div className="flex w-full sm:w-auto gap-2 flex-wrap">
+                    <Link to="/owner/saved-addresses" className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg flex-1 sm:flex-none text-center py-2.5 px-3 text-xs sm:text-sm font-medium transition-colors">
+                        📍 Mis Direcciones
+                    </Link>
                     <Link to="/dogs" className="btn-secondary flex-1 sm:flex-none text-center py-2.5 px-3 text-xs sm:text-sm">
                         Gestionar Perros
                     </Link>
