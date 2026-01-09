@@ -10,7 +10,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (user) => {
     return jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
+        { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -24,6 +24,19 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
                 authProvider,
                 providerUserId
             }
+        },
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            roles: true,
+            activeRole: true,
+            termsAccepted: true,
+            verificationStatus: true,
+            city: true,
+            zone: true
         }
     });
 
@@ -31,7 +44,20 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
 
     // 2. Try to find user by email (linked accounts)
     user = await prisma.user.findUnique({
-        where: { email }
+        where: { email },
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            roles: true,
+            activeRole: true,
+            termsAccepted: true,
+            verificationStatus: true,
+            city: true,
+            zone: true
+        }
     });
 
     if (user) {
@@ -42,6 +68,19 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
                 authProvider,
                 providerUserId,
                 emailVerified: true // OAuth providers verify email
+            },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                roles: true,
+                activeRole: true,
+                termsAccepted: true,
+                verificationStatus: true,
+                city: true,
+                zone: true
             }
         });
         return user;
@@ -58,10 +97,24 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             phone: '', // Placeholder, user will be prompted to complete
             city: '',  // Placeholder
             zone: '',  // Placeholder
-            role: 'OWNER', // Default role, can be updated later
+            roles: ['OWNER'],
+            activeRole: 'OWNER',
             authProvider,
             providerUserId,
             emailVerified: true
+        },
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            roles: true,
+            activeRole: true,
+            termsAccepted: true,
+            verificationStatus: true,
+            city: true,
+            zone: true
         }
     });
 };
@@ -95,7 +148,8 @@ export const googleLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                role: user.role,
+                roles: user.roles,
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)
@@ -135,7 +189,8 @@ export const facebookLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                role: user.role,
+                roles: user.roles,
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)
@@ -178,7 +233,8 @@ export const microsoftLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                role: user.role,
+                roles: user.roles,
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)

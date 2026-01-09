@@ -12,7 +12,7 @@ const Header = () => {
 
     const NavLinks = () => (
         <>
-            {user.role === 'OWNER' ? (
+            {user.activeRole === 'OWNER' ? (
                 <>
                     <Link to="/owner/dashboard" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
                         Solicitudes
@@ -32,15 +32,21 @@ const Header = () => {
                 </>
             )}
 
-            <Link to="/my-walks" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+            {user.roles && user.roles.length > 1 && (
+                <Link to="/seleccionar-rol" onClick={closeMenu} className="text-primary-600 font-black py-2 md:py-0 hover:scale-105 transition-transform">
+                    🔄 Cambiar Modo
+                </Link>
+            )}
+
+            <Link to="/my-walks" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
                 Mis Paseos
             </Link>
 
-            <Link to="/profile" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+            <Link to="/profile" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
                 Perfil
             </Link>
 
-            <Link to="/ayuda" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+            <Link to="/ayuda" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
                 Ayuda
             </Link>
         </>

@@ -31,7 +31,7 @@ export const requireRole = (role) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        if (req.user.role !== role) {
+        if (!req.user.roles || !req.user.roles.includes(role)) {
             return res.status(403).json({
                 error: `Access denied. This endpoint requires ${role} role.`
             });

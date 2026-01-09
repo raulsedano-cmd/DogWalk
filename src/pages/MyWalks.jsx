@@ -36,12 +36,12 @@ const MyWalks = () => {
         <div
             key={assignment.id}
             className={`card hover:shadow-md transition-all cursor-pointer border-l-4 ${assignment.status === 'IN_PROGRESS'
-                    ? 'border-l-blue-500 bg-blue-50/30'
-                    : assignment.status === 'PENDING'
-                        ? 'border-l-primary-500'
-                        : assignment.status === 'CANCELLED'
-                            ? 'border-l-red-400 bg-gray-50 opacity-75'
-                            : 'border-l-green-500 bg-gray-50 opacity-75'
+                ? 'border-l-blue-500 bg-blue-50/30'
+                : assignment.status === 'PENDING'
+                    ? 'border-l-primary-500'
+                    : assignment.status === 'CANCELLED'
+                        ? 'border-l-red-400 bg-gray-50 opacity-75'
+                        : 'border-l-green-500 bg-gray-50 opacity-75'
                 }`}
             onClick={() => navigate(`/walk-requests/${assignment.walkRequestId}`)}
         >
@@ -65,9 +65,9 @@ const MyWalks = () => {
                     <span>{assignment.walkRequest.startTime} ({assignment.walkRequest.durationMinutes} min)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span>{user.role === 'OWNER' ? '👤 Paseador:' : '👤 Dueño:'}</span>
+                    <span>{user.activeRole === 'OWNER' ? '👤 Paseador:' : '👤 Dueño:'}</span>
                     <span className="font-semibold">
-                        {user.role === 'OWNER'
+                        {user.activeRole === 'OWNER'
                             ? `${assignment.walker.firstName} ${assignment.walker.lastName}`
                             : `${assignment.walkRequest.owner.firstName} ${assignment.walkRequest.owner.lastName}`}
                     </span>
@@ -76,7 +76,7 @@ const MyWalks = () => {
 
             <div className="flex justify-between items-center pt-3 border-t">
                 <span className="text-primary-600 font-bold text-lg">S/ {assignment.walkRequest.suggestedPrice}</span>
-                {assignment.status === 'PENDING' && user.role === 'WALKER' && (
+                {assignment.status === 'PENDING' && user.activeRole === 'WALKER' && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -87,7 +87,7 @@ const MyWalks = () => {
                         Iniciar Paseo
                     </button>
                 )}
-                {assignment.status === 'IN_PROGRESS' && user.role === 'WALKER' && (
+                {assignment.status === 'IN_PROGRESS' && user.activeRole === 'WALKER' && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

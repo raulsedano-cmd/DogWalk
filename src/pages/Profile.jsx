@@ -42,7 +42,6 @@ const Profile = () => {
                 city: user.city,
                 zone: user.zone,
                 bio: user.bio || '',
-                role: user.role,
                 // Walker specifics (defaults if null)
                 profilePhotoUrl: user.profilePhotoUrl || '',
                 baseCity: user.baseCity || user.city || '',
@@ -60,7 +59,7 @@ const Profile = () => {
                 addressReference: user.addressReference || '',
             });
 
-            if (user.role === 'WALKER') {
+            if (user.roles.includes('WALKER')) {
                 loadReviews();
             }
         }
@@ -83,7 +82,7 @@ const Profile = () => {
             Object.keys(formData).forEach(key => {
                 if (key === 'profilePhoto' && formData[key]) {
                     data.append('profilePic', formData[key]);
-                } else if (formData[key] !== null && formData[key] !== undefined) {
+                } else if (key !== 'role' && formData[key] !== null && formData[key] !== undefined) {
                     data.append(key, formData[key]);
                 }
             });
@@ -166,11 +165,13 @@ const Profile = () => {
                                 <input type="tel" className="input-field" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                                <select className="input-field" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} disabled>
-                                    <option value="OWNER">Dueño</option>
-                                    <option value="WALKER">Paseador</option>
-                                </select>
+                                <label className="block text-sm font-medium text-gray-700 mb-1 flex justify-between items-center">
+                                    Modo Actual
+                                    <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">{user.activeRole}</span>
+                                </label>
+                                <div className="input-field bg-gray-50 text-gray-500 flex items-center">
+                                    {user.roles.join(' & ')}
+                                </div>
                             </div>
                         </div>
 
@@ -182,7 +183,7 @@ const Profile = () => {
                         </div>
 
                         {/* Walker Specific Fields */}
-                        {user.role === 'WALKER' && (
+                        {user.roles.includes('WALKER') && (
                             <div className="border-t pt-4 mt-4">
                                 <h3 className="text-lg font-semibold mb-3">Perfil de Paseador</h3>
 
@@ -294,7 +295,8 @@ const Profile = () => {
                             <p><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
                             <p><strong>Email:</strong> {user.email}</p>
                             <p><strong>Teléfono:</strong> {user.phone}</p>
-                            <p><strong>Rol:</strong> {user.role === 'OWNER' ? 'Dueño' : 'Paseador'}</p>
+                            <p><strong>Roles:</strong> {user.roles.join(', ')}</p>
+                            <p><strong>Modo Actual:</strong> {user.activeRole === 'OWNER' ? 'Dueño' : 'Paseador'}</p>
                             <p><strong>Ubicación:</strong> {user.city}, {user.zone}</p>
                         </div>
 
@@ -305,7 +307,7 @@ const Profile = () => {
                             </div>
                         )}
 
-                        {user.role === 'WALKER' && (
+                        {user.roles.includes('WALKER') && (
                             <div className="border-t pt-4 mt-4">
                                 <h3 className="text-lg font-semibold mb-2">Perfil Profesional</h3>
                                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
@@ -336,7 +338,7 @@ const Profile = () => {
                 )}
             </div>
 
-            {user.role === 'WALKER' && reviews.length > 0 && (
+            {user.roles.includes('WALKER') && reviews.length > 0 && (
                 <div className="card">
                     <h2 className="text-2xl font-semibold mb-4">Reseñas Recibidas ({user.averageRating?.toFixed(1)} ⭐)</h2>
                     <div className="space-y-4">

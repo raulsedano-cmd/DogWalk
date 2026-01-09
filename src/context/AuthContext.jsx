@@ -61,12 +61,34 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (userData) => {
-        // Merge with existing user data to ensure we don't lose fields not returned by update
-        setUser(prev => {
-            const updated = { ...prev, ...userData };
-            localStorage.setItem('user', JSON.stringify(updated));
-            return updated;
-        });
+        // Enforce persistence in both state and localStorage
+        const updated = { ...user, ...userData };
+        localStorage.setItem('user', JSON.stringify(updated));
+        setUser(updated);
+    };
+
+    const switchRole = async (role) => {
+        try {
+            const response = await api.post('/users/switch-role', { role });
+            const updatedUser = response.data.user;
+            updateUser(updatedUser);
+            return updatedUser;
+        } catch (error) {
+            console.error('Error switching role:', error);
+            throw error;
+        }
+    };
+
+    const activateRole = async (role) => {
+        try {
+            const response = await api.post('/users/activate-role', { role });
+            const updatedUser = response.data.user;
+            updateUser(updatedUser);
+            return updatedUser;
+        } catch (error) {
+            console.error('Error activating role:', error);
+            throw error;
+        }
     };
 
     const value = {
@@ -77,6 +99,8 @@ export const AuthProvider = ({ children }) => {
         loginWithToken,
         logout,
         updateUser,
+        switchRole,
+        activateRole,
         isAuthenticated: !!user,
     };
 

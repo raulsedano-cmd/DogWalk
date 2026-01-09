@@ -23,11 +23,20 @@ import Help from './pages/Help';
 import Payments from './pages/Payments';
 import ErrorBoundary from './components/ErrorBoundary';
 
+import RoleSelection from './pages/RoleSelection';
+
 const HomeRoute = () => {
     const { isAuthenticated, user } = useAuth();
     if (isAuthenticated && user) {
         if (!user.termsAccepted) return <Navigate to="/aceptar-terminos" replace />;
-        return <Navigate to={user.role === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard'} replace />;
+
+        // If user has multiple roles, let them choose
+        if (user.roles && user.roles.length > 1) {
+            return <Navigate to="/seleccionar-rol" replace />;
+        }
+
+        // Otherwise use activeRole or the only role they have
+        return <Navigate to={user.activeRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard'} replace />;
     }
     return <Landing />;
 };
@@ -53,7 +62,7 @@ function App() {
                                     <Route path="/" element={<HomeRoute />} />
                                     <Route path="/login" element={<Login />} />
                                     <Route path="/register" element={<Register />} />
-                                    {/* ... rest of routes ... */}
+                                    <Route path="/seleccionar-rol" element={<ProtectedRoute><RoleSelection /></ProtectedRoute>} />
                                     <Route path="/terminos-y-condiciones" element={<TermsAndConditions />} />
                                     <Route
                                         path="/aceptar-terminos"

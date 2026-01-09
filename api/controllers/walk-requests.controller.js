@@ -12,7 +12,7 @@ export const getWalkRequests = async (req, res) => {
         const where = {};
 
         // For walkers: show only OPEN requests
-        if (req.user.role === 'WALKER') {
+        if (req.user.activeRole === 'WALKER') {
             where.status = 'OPEN';
 
             const walker = await prisma.user.findUnique({
@@ -51,7 +51,7 @@ export const getWalkRequests = async (req, res) => {
                 where.city = { contains: walker.baseCity, mode: 'insensitive' };
             }
 
-        } else if (req.user.role === 'OWNER') {
+        } else if (req.user.activeRole === 'OWNER') {
             where.ownerId = req.user.userId;
             if (status) where.status = status;
         }
@@ -226,7 +226,7 @@ export const createWalkRequest = async (req, res) => {
         try {
             const availableWalkers = await prisma.user.findMany({
                 where: {
-                    role: 'WALKER',
+                    roles: { has: 'WALKER' },
                     isAvailable: true,
                     baseCity: request.city || undefined,
                 },

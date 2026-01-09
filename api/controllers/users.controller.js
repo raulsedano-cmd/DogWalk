@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 export const getMyProfile = async (req, res) => {
     try {
@@ -12,14 +13,14 @@ export const getMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                roles: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,
                 longitude: true,
                 bio: true,
                 averageRating: true,
-                // Enhanced profile
                 profilePhotoUrl: true,
                 isVerifiedWalker: true,
                 isAvailable: true,
@@ -54,8 +55,7 @@ export const getMyProfile = async (req, res) => {
 export const updateMyProfile = async (req, res) => {
     try {
         const {
-            firstName, lastName, phone, city, zone, bio, role,
-            // Enhanced fields
+            firstName, lastName, phone, city, zone, bio,
             profilePhotoUrl, isAvailable, baseCity, baseZone, serviceRadiusKm,
             experienceText, acceptsSmall, acceptsMedium, acceptsLarge, maxDogsAtOnce,
             addressType, addressReference
@@ -73,29 +73,22 @@ export const updateMyProfile = async (req, res) => {
         if (addressType !== undefined) updateData.addressType = addressType;
         if (addressReference !== undefined) updateData.addressReference = addressReference;
 
-        // Handle Profile Photo Upload
         if (req.file) {
             updateData.profilePhotoUrl = `/uploads/profiles/${req.file.filename}`;
         } else if (profilePhotoUrl !== undefined) {
             updateData.profilePhotoUrl = profilePhotoUrl;
         }
 
-        if (role && ['OWNER', 'WALKER'].includes(role)) {
-            updateData.role = role;
-        }
-
-        // Enhanced walker fields
-        if (req.user.role === 'WALKER' || role === 'WALKER') {
-            if (isAvailable !== undefined) updateData.isAvailable = isAvailable === 'true' || isAvailable === true;
-            if (baseCity !== undefined) updateData.baseCity = baseCity;
-            if (baseZone !== undefined) updateData.baseZone = baseZone;
-            if (serviceRadiusKm !== undefined) updateData.serviceRadiusKm = parseInt(serviceRadiusKm);
-            if (experienceText !== undefined) updateData.experienceText = experienceText;
-            if (acceptsSmall !== undefined) updateData.acceptsSmall = acceptsSmall === 'true' || acceptsSmall === true;
-            if (acceptsMedium !== undefined) updateData.acceptsMedium = acceptsMedium === 'true' || acceptsMedium === true;
-            if (acceptsLarge !== undefined) updateData.acceptsLarge = acceptsLarge === 'true' || acceptsLarge === true;
-            if (maxDogsAtOnce !== undefined) updateData.maxDogsAtOnce = parseInt(maxDogsAtOnce);
-        }
+        // Walker fields update logic
+        if (isAvailable !== undefined) updateData.isAvailable = isAvailable === 'true' || isAvailable === true;
+        if (baseCity !== undefined) updateData.baseCity = baseCity;
+        if (baseZone !== undefined) updateData.baseZone = baseZone;
+        if (serviceRadiusKm !== undefined) updateData.serviceRadiusKm = parseInt(serviceRadiusKm);
+        if (experienceText !== undefined) updateData.experienceText = experienceText;
+        if (acceptsSmall !== undefined) updateData.acceptsSmall = acceptsSmall === 'true' || acceptsSmall === true;
+        if (acceptsMedium !== undefined) updateData.acceptsMedium = acceptsMedium === 'true' || acceptsMedium === true;
+        if (acceptsLarge !== undefined) updateData.acceptsLarge = acceptsLarge === 'true' || acceptsLarge === true;
+        if (maxDogsAtOnce !== undefined) updateData.maxDogsAtOnce = parseInt(maxDogsAtOnce);
 
         const user = await prisma.user.update({
             where: { id: req.user.userId },
@@ -106,14 +99,14 @@ export const updateMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                roles: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,
                 longitude: true,
                 bio: true,
                 averageRating: true,
-                // Enhanced profile
                 profilePhotoUrl: true,
                 isVerifiedWalker: true,
                 isAvailable: true,
@@ -142,6 +135,65 @@ export const updateMyProfile = async (req, res) => {
     }
 };
 
+export const activateRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['OWNER', 'WALKER'].includes(role)) {
+            return res.status(400).json({ error: 'Rol no válido' });
+        }
+
+        const currentUser = await prisma.user.findUnique({
+            where: { id: req.user.userId }
+        });
+
+        if (currentUser.roles.includes(role)) {
+            return res.status(400).json({ error: 'El rol ya está activado' });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: {
+                roles: {
+                    push: role
+                },
+                activeRole: role
+            }
+        });
+
+        res.json({ message: 'Rol activado correctamente', user: updatedUser });
+    } catch (error) {
+        console.error('Activate role error:', error);
+        res.status(500).json({ error: 'Error al activar rol' });
+    }
+};
+
+export const switchRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['OWNER', 'WALKER'].includes(role)) {
+            return res.status(400).json({ error: 'Rol no válido' });
+        }
+
+        const currentUser = await prisma.user.findUnique({
+            where: { id: req.user.userId }
+        });
+
+        if (!currentUser.roles.includes(role)) {
+            return res.status(400).json({ error: 'No tienes este rol activado' });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { activeRole: role }
+        });
+
+        res.json({ message: 'Rol cambiado correctamente', user: updatedUser });
+    } catch (error) {
+        console.error('Switch role error:', error);
+        res.status(500).json({ error: 'Error al cambiar rol' });
+    }
+};
+
 export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -152,7 +204,8 @@ export const getUserById = async (req, res) => {
                 id: true,
                 firstName: true,
                 lastName: true,
-                role: true,
+                roles: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,

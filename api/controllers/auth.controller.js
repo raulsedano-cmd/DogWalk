@@ -2,7 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 export const register = async (req, res) => {
     try {
@@ -24,6 +25,7 @@ export const register = async (req, res) => {
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
             where: { email },
+            select: { id: true, email: true } // Only need to check existence
         });
 
         if (existingUser) {
@@ -41,7 +43,8 @@ export const register = async (req, res) => {
                 firstName,
                 lastName,
                 phone,
-                role,
+                roles: [role],
+                activeRole: role,
                 city,
                 zone,
                 bio: bio || '',
@@ -52,7 +55,8 @@ export const register = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                roles: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 bio: true,
@@ -64,7 +68,7 @@ export const register = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
+            { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
@@ -92,6 +96,24 @@ export const login = async (req, res) => {
         // Find user
         const user = await prisma.user.findUnique({
             where: { email },
+            // Do NOT use select here because we need the password for comparison
+            // However, the error is likely because it tries to auto-select EVERYTHING.
+            // If we can't use select because we need all (including password),
+            // let's at least select everything EXPLICITLY to avoid 'role'.
+            select: {
+                id: true,
+                email: true,
+                password: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                roles: true,
+                activeRole: true,
+                termsAccepted: true,
+                verificationStatus: true,
+                city: true,
+                zone: true
+            }
         });
 
         if (!user) {
@@ -107,7 +129,7 @@ export const login = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
+            { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );

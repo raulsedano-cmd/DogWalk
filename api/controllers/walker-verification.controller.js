@@ -7,7 +7,7 @@ export const submitVerification = async (req, res) => {
         const { dniNumber } = req.body;
         const userId = req.user.userId;
 
-        if (req.user.role !== 'WALKER') {
+        if (!req.user.roles.includes('WALKER')) {
             return res.status(403).json({ error: 'Solo los paseadores requieren verificación de DNI' });
         }
 

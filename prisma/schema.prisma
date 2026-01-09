@@ -17,7 +17,8 @@ model User {
   firstName     String
   lastName      String
   phone         String
-  role          UserRole
+  roles         UserRole[] @default([OWNER])
+  activeRole    UserRole   @default(OWNER)
   city          String
   zone          String
   bio           String?   @db.Text
@@ -83,7 +84,7 @@ model User {
   
   @@unique([authProvider, providerUserId])
   @@index([city, zone])
-  @@index([role])
+  @@index([activeRole])
 }
 
 enum AuthProvider {

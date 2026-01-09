@@ -7,7 +7,7 @@ export const getMyAssignments = async (req, res) => {
     try {
         const where = {};
 
-        if (req.user.role === 'WALKER') {
+        if (req.user.activeRole === 'WALKER') {
             where.walkerId = req.user.userId;
         } else {
             // For owners, get assignments for their walk requests
