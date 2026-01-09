@@ -143,9 +143,10 @@ const SavedAddresses = () => {
                         {editingAddress ? 'Editar Dirección' : 'Nueva Dirección'}
                     </h3>
                     <form onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-6">
+                            {/* 1. Nombre para identificar */}
                             <div>
-                                <label className="block text-sm font-medium mb-1">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">
                                     Nombre de la dirección *
                                 </label>
                                 <input
@@ -154,17 +155,21 @@ const SavedAddresses = () => {
                                     value={formData.name}
                                     onChange={handleInputChange}
                                     placeholder="Ej: Casa, Trabajo, Parque favorito"
-                                    className="w-full px-3 py-2 border rounded-lg"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                     required
                                 />
                             </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium mb-3">
+                            {/* 2. Mapa y Buscador (Llena todo lo demás) */}
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <label className="block text-sm font-bold text-blue-800 mb-2">
                                     Ubicación Exacta *
                                 </label>
+                                <p className="text-xs text-blue-600 mb-3">
+                                    Busca tu dirección o mueve el pin en el mapa. Los campos de abajo se llenarán automáticamente.
+                                </p>
                                 <LocationPicker
-                                    label="Buscar dirección o seleccionar en el mapa"
+                                    label="Buscar dirección en Google Maps"
                                     lat={formData.latitude ? parseFloat(formData.latitude) : null}
                                     lng={formData.longitude ? parseFloat(formData.longitude) : null}
                                     onChange={(lat, lng) => {
@@ -185,81 +190,100 @@ const SavedAddresses = () => {
                                     }}
                                 />
                                 {(!formData.latitude || !formData.longitude) && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        Debes seleccionar una ubicación en el mapa
-                                    </p>
+                                    <div className="mt-2 text-red-500 text-xs flex items-center gap-1">
+                                        ⚠️ Debes seleccionar una ubicación en el mapa
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Hidden fields for validation if needed, though state handles it */}
-
-                            {/* Address details that might need manual correction or confirmation */}
-                            <div className="md:col-span-2 mt-4">
-                                <label className="block text-sm font-medium mb-1">
-                                    Dirección (Autocompletado) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg bg-gray-50"
-                                    readOnly // User should use logic picker, but okay to edit? Let's make it editable
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Ciudad
-                                </label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    value={formData.city}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg bg-gray-50"
-                                    readOnly
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Zona
-                                </label>
-                                <input
-                                    type="text"
-                                    name="zone"
-                                    value={formData.zone}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                />
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium mb-1">
-                                    Referencia adicional
-                                </label>
-                                <textarea
-                                    name="addressReference"
-                                    value={formData.addressReference}
-                                    onChange={handleInputChange}
-                                    placeholder="Ej: Edificio azul, tercer piso"
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    rows="2"
-                                />
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="flex items-center gap-2">
+                            {/* 3. Datos Autocompletados (Confirmación) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                        Dirección Detectada
+                                    </label>
                                     <input
-                                        type="checkbox"
-                                        name="isDefault"
-                                        checked={formData.isDefault}
-                                        onChange={handleInputChange}
-                                        className="w-4 h-4"
+                                        type="text"
+                                        value={formData.address}
+                                        readOnly
+                                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 cursor-not-allowed"
                                     />
-                                    <span className="text-sm">Usar como dirección predeterminada</span>
-                                </label>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                        Distrito
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.zone}
+                                        readOnly
+                                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                        Ciudad
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.city}
+                                        readOnly
+                                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 cursor-not-allowed"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 4. Detalles Adicionales */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                                        Tipo de inmueble
+                                    </label>
+                                    <select
+                                        name="addressType"
+                                        value={formData.addressType}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Casa">Casa</option>
+                                        <option value="Departamento">Departamento</option>
+                                        <option value="Condominio">Condominio</option>
+                                        <option value="Oficina">Oficina</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="flex items-center gap-2 h-full pt-6 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            name="isDefault"
+                                            checked={formData.isDefault}
+                                            onChange={handleInputChange}
+                                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700 font-medium">
+                                            Usar como dirección predeterminada
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                                        Referencia / Cómo llegar
+                                    </label>
+                                    <textarea
+                                        name="addressReference"
+                                        value={formData.addressReference}
+                                        onChange={handleInputChange}
+                                        placeholder="Ej: Portón negro, timbre 302, frente al parque..."
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        rows="2"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -300,7 +324,7 @@ const SavedAddresses = () => {
 
                         <p className="text-sm text-gray-600 mb-1">{address.address}</p>
                         <p className="text-sm text-gray-500 mb-3">
-                            {address.zone}, {address.city}
+                            {address.zone} (Distrito), {address.city}
                         </p>
 
                         {address.addressReference && (
