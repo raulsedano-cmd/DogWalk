@@ -93,7 +93,7 @@ function App() {
                                         <Route
                                             path="/owner/dashboard"
                                             element={
-                                                <ProtectedRoute>
+                                                <ProtectedRoute requiredRole="OWNER">
                                                     <LegalRedirect>
                                                         <OwnerDashboard />
                                                     </LegalRedirect>
@@ -103,7 +103,7 @@ function App() {
                                         <Route
                                             path="/owner/saved-addresses"
                                             element={
-                                                <ProtectedRoute>
+                                                <ProtectedRoute requiredRole="OWNER">
                                                     <LegalRedirect>
                                                         <SavedAddresses />
                                                     </LegalRedirect>
@@ -113,7 +113,7 @@ function App() {
                                         <Route
                                             path="/walker/dashboard"
                                             element={
-                                                <ProtectedRoute>
+                                                <ProtectedRoute requiredRole="WALKER">
                                                     <LegalRedirect>
                                                         <WalkerDashboard />
                                                     </LegalRedirect>
