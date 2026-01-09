@@ -222,10 +222,10 @@ export const createWalkRequest = async (req, res) => {
                 suggestedPrice: parseFloat(suggestedPrice),
                 details: details || null,
                 status: 'OPEN',
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
-                // country: req.body.country || null,  // PENDING: DB migration blocked
-                // city: req.body.city || null,        // PENDING: DB migration blocked
+                // latitude: latitude ? parseFloat(latitude) : null,  // PENDING: DB migration
+                // longitude: longitude ? parseFloat(longitude) : null, // PENDING: DB migration
+                // country: req.body.country || null,  
+                // city: req.body.city || null,        
                 addressType: req.body.addressType || null,
                 addressReference: req.body.addressReference || null,
             },
