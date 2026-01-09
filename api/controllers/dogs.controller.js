@@ -25,24 +25,19 @@ export const createDog = async (req, res) => {
         } = req.body;
 
         // Validation
-        if (!name) {
-            return res.status(400).json({ error: 'El nombre es obligatorio' });
+        if (!name || !size) {
+            return res.status(400).json({ error: 'Nombre y tamaño son obligatorios' });
         }
 
-        /* size is pending DB migration
-        if (!size) {
-            return res.status(400).json({ error: 'El tamaño es obligatorio' });
-        }
         if (!['SMALL', 'MEDIUM', 'LARGE'].includes(size)) {
             return res.status(400).json({ error: 'Tamaño no válido' });
         }
-        */
 
         const dog = await prisma.dog.create({
             data: {
                 ownerId: req.user.userId,
                 name,
-                // size, // PENDING DB MIGRATION
+                size,
                 breed: breed || null,
                 behavior: behavior || null,
                 age: age ? parseInt(age) : null,
@@ -90,7 +85,7 @@ export const updateDog = async (req, res) => {
 
         const updateData = {};
         if (name) updateData.name = name;
-        // if (size && ['SMALL', 'MEDIUM', 'LARGE'].includes(size)) updateData.size = size; // PENDING DB MIGRATION
+        if (size && ['SMALL', 'MEDIUM', 'LARGE'].includes(size)) updateData.size = size;
         if (breed !== undefined) updateData.breed = breed || null;
         if (behavior !== undefined) updateData.behavior = behavior || null;
         if (age !== undefined) updateData.age = age ? parseInt(age) : null;
