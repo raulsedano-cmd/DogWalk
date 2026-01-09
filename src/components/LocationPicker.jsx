@@ -55,6 +55,41 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
         mapRef.current = map;
     }, []);
 
+    // Helper function to extract address components correctly
+    const extractAddressComponents = (components) => {
+        const getComponent = (types) => {
+            const comp = components.find(c => types.some(t => c.types.includes(t)));
+            return comp ? comp.long_name : '';
+        };
+
+        // Specific logic for Peru/Lima
+        // District is usually 'locality' or 'sublocality_level_1'
+        // City/Province is 'administrative_area_level_2' (e.g., Lima Province)
+        // Region/Department is 'administrative_area_level_1' (e.g., Lima Region)
+
+        // Priority for District: Locality -> Sublocality Level 1 -> Neighborhood
+        let zone = getComponent(['locality']);
+        if (!zone || zone === 'Lima') { // If locality is 'Lima', look deeper for district
+            zone = getComponent(['sublocality_level_1', 'sublocality']);
+        }
+
+        // Priority for City: Admin Level 2 (Province) -> Admin Level 1 (Region)
+        let city = getComponent(['administrative_area_level_2']);
+        if (!city) {
+            city = getComponent(['administrative_area_level_1']);
+        }
+
+        // Fallback: If both are the same, try to differentiate
+        if (city === zone) {
+            const altZone = getComponent(['sublocality_level_1', 'neighborhood']);
+            if (altZone) zone = altZone;
+        }
+
+        const country = getComponent(['country']);
+
+        return { city, zone, country };
+    };
+
     const handleMapClick = useCallback(async (e) => {
         const newLat = e.latLng.lat();
         const newLng = e.latLng.lng();
@@ -70,18 +105,10 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                 // Update the search input value with the clicked address
                 setValue(address.formatted_address, false);
 
-                const getComponent = (types) => {
-                    const comp = address.address_components.find(c => types.some(t => c.types.includes(t)));
-                    return comp ? comp.long_name : '';
-                };
-
-                // In Peru/Latam: locality is often district, admin_area_l2 is often city/province
-                const city = getComponent(['locality', 'administrative_area_level_2', 'sublocality_level_1']);
-                const zone = getComponent(['neighborhood', 'sublocality', 'sublocality_level_2', 'administrative_area_level_3']);
-                const country = getComponent(['country']);
+                const { city, zone, country } = extractAddressComponents(address.address_components);
 
                 if (onAddressChange) {
-                    onAddressChange(city, zone, country);
+                    onAddressChange(city, zone, country, address.formatted_address);
                 }
             }
         } catch (error) {
@@ -106,20 +133,14 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                 mapRef.current.setZoom(17);
             }
 
-            const getComponent = (types) => {
-                const comp = results[0].address_components.find(c => types.some(t => c.types.includes(t)));
-                return comp ? comp.long_name : '';
-            };
-
-            const city = getComponent(['locality', 'administrative_area_level_2', 'sublocality_level_1']);
-            const zone = getComponent(['neighborhood', 'sublocality', 'sublocality_level_2', 'administrative_area_level_3']);
-            const country = getComponent(['country']);
+            const { city, zone, country } = extractAddressComponents(results[0].address_components);
 
             if (onAddressChange) {
-                onAddressChange(city, zone, country);
+                onAddressChange(city, zone, country, results[0].formatted_address);
             }
         } catch (error) {
             console.error('Error selecting place:', error);
+            // Fallback for when geocoding fails but we have coords from click
         }
     };
 
