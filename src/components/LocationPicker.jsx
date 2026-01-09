@@ -58,7 +58,13 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
     // Helper function to extract address components correctly
     // Helper function to extract address components correctly
     // Accepts either a full results array (preferred) or a single components array
+    // Accepts either a full results array (preferred) or a single components array
     const extractAddressComponents = (input) => {
+        // --- DEBUG START ---
+        console.log('--- DEBUG GOOGLE MAPS RESULTS ---');
+        console.log('Input:', input);
+        // --- DEBUG END ---
+
         // Normalization: Ensure we have access to a list of components from the most specific result
         // and ideally the full list of results to scan for administrative levels
         let components;
@@ -86,29 +92,38 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
         // 1. High Precision: Look for a result node that represents the District itself
         // In Peru, this is typically 'administrative_area_level_3'
         if (fullResults.length > 0) {
+            console.log('Looking for Admin Level 3 in full results...');
             const districtNode = fullResults.find(r => r.types.includes('administrative_area_level_3'));
             if (districtNode) {
-                // If found, the first component of this node is typically the district name
+                console.log('FOUND Admin Level 3 Node:', districtNode);
+                // The first component of this result node is typically the district name
                 zone = districtNode.address_components[0]?.long_name;
+            } else {
+                console.log('Admin Level 3 NOT FOUND in results list.');
             }
         }
 
         // 2. Fallback: Parse components of the specific address
         if (!zone) {
+            console.log('Fallback: Looking in specific address components');
             zone = getComponent(components, ['administrative_area_level_3']);
         }
 
         if (!zone) {
+            console.log('Fallback 2: Looking for sublocality_level_1');
             zone = getComponent(components, ['sublocality_level_1']);
         }
 
         if (!zone) {
+            console.log('Fallback 3: Looking for locality (ignoring generics)');
             const val = getComponent(components, ['locality']);
             // Ignore generic city names if they appear as locality
             if (val && !['Lima', 'Callao', 'Trujillo', 'Arequipa'].includes(val)) {
                 zone = val;
             }
         }
+
+        console.log('FINAL ZONE EXTRACTED:', zone);
 
         // --- CITY / CIUDAD ---
         let city = getComponent(components, ['administrative_area_level_2']); // Province
