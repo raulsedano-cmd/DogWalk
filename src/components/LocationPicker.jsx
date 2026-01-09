@@ -106,7 +106,9 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
         // 2. Fallback: Parse components of the specific address
         if (!zone) {
             console.log('Fallback: Looking in specific address components');
-            console.log('Specific Address Components:', components);
+            // CRITICAL DEBUG: Print full object to see hidden fields
+            console.log('Specific Address Components JSON:', JSON.stringify(components, null, 2));
+
             zone = getComponent(components, ['administrative_area_level_3']);
         }
 
@@ -124,9 +126,36 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
             zone = getComponent(components, ['sublocality_level_1']);
         }
 
+        // --- EMERGENCY FALLBACK: PARSE FORMATTED ADDRESS ---
+        // If we still suspect zone is wrong (formatted address usually has "District, City")
+        // Format matches: "Street, Urbanization, District, City, Country"
+        if (input[0]?.formatted_address) {
+            const addressParts = input[0].formatted_address.split(',').map(p => p.trim());
+            console.log('Address Parts:', addressParts);
 
+            // Heuristic: If we found "Las Acacias" (sublocality) but the address has more parts,
+            // maybe the district is the part AFTER sublocality or BEFORE City.
+
+            // Find explicit 'Lima' or 'Callao' index
+            const cityIndex = addressParts.findIndex(p => p.includes('Lima') || p.includes('Callao'));
+
+            if (cityIndex > 0) {
+                // The part potentially immediately before City is the District
+                const potentialDistrict = addressParts[cityIndex - 1];
+
+                // If our current zome matches a part that is NOT the potential district, 
+                // and potential district looks like a valid name (no numbers), swap it.
+                if (potentialDistrict && potentialDistrict !== zone && !/\d/.test(potentialDistrict)) {
+                    console.log(`Swapping Zone '${zone}' for Potential District from String: '${potentialDistrict}'`);
+                    zone = potentialDistrict;
+                }
+            }
+        }
 
         console.log('FINAL ZONE EXTRACTED:', zone);
+
+
+
 
         // --- CITY / CIUDAD ---
         let city = getComponent(components, ['administrative_area_level_2']); // Province
