@@ -52,17 +52,6 @@ const Header = () => {
                 </>
             )}
 
-            {user.roles && user.roles.length > 1 && (
-                <button
-                    onClick={handleSwitch}
-                    disabled={switching}
-                    className={`font-bold py-2 md:py-1 px-3 rounded-full border border-current text-xs transition-transform hover:scale-105 ${isWalker ? 'text-primary-600 border-primary-100 hover:bg-primary-50' : 'text-walker-600 border-walker-100 hover:bg-walker-50'
-                        } ${switching ? 'opacity-50 cursor-wait' : ''}`}
-                >
-                    {switching ? '...' : `✨ Cambiar a ${isWalker ? 'Dueño' : 'Paseador'}`}
-                </button>
-            )}
-
             <Link to="/my-walks" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0 text-sm md:text-base`}>
                 Mis Paseos
             </Link>
@@ -76,6 +65,30 @@ const Header = () => {
             </Link>
         </>
     );
+
+    const RoleSwitcher = ({ mobile = false }) => {
+        if (!user.roles || user.roles.length <= 1) return null;
+
+        return (
+            <button
+                onClick={handleSwitch}
+                disabled={switching}
+                className={mobile
+                    ? "text-left py-3 px-2 text-xs font-semibold text-gray-500 border-t border-gray-100 flex items-center space-x-2"
+                    : "text-[10px] uppercase tracking-wider font-bold text-gray-400 hover:text-primary-600 transition-colors py-1"
+                }
+            >
+                {switching ? 'Cambiando...' : (
+                    <>
+                        <span>🔄</span>
+                        <span className={mobile ? "" : "underline decoration-dotted"}>
+                            {mobile ? `Cambiar a modo ${isWalker ? 'Dueño' : 'Paseador'}` : `Modo ${isWalker ? 'Dueño' : 'Paseador'}`}
+                        </span>
+                    </>
+                )}
+            </button>
+        );
+    };
 
     return (
         <header className={`shadow-sm border-b sticky top-0 z-[100] transition-colors ${isWalker
@@ -101,13 +114,17 @@ const Header = () => {
                     {isAuthenticated ? (
                         <div className="hidden md:flex items-center space-x-6">
                             <NavLinks />
-                            <NotificationDropdown />
-                            <button
-                                onClick={logout}
-                                className="text-gray-700 hover:text-red-600 transition-colors ml-4"
-                            >
-                                Salir
-                            </button>
+
+                            <div className="flex items-center space-x-4 border-l pl-6 border-gray-100">
+                                <RoleSwitcher />
+                                <NotificationDropdown />
+                                <button
+                                    onClick={logout}
+                                    className="text-gray-500 hover:text-red-500 transition-colors text-sm font-medium"
+                                >
+                                    Salir
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <div className="hidden md:flex items-center space-x-4">
@@ -138,9 +155,10 @@ const Header = () => {
                         {isAuthenticated ? (
                             <>
                                 <NavLinks />
+                                <RoleSwitcher mobile />
                                 <button
                                     onClick={() => { logout(); closeMenu(); }}
-                                    className="text-left py-2 text-red-600 font-bold"
+                                    className="text-left py-3 px-2 text-red-600 font-bold border-t border-gray-100"
                                 >
                                     Cerrar Sesión
                                 </button>

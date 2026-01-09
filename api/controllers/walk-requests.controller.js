@@ -17,7 +17,7 @@ export const getWalkRequests = async (req, res) => {
 
             const walker = await prisma.user.findUnique({
                 where: { id: req.user.userId },
-                select: { isAvailable: true, latitude: true, longitude: true, serviceRadiusKm: true, baseCity: true }
+                select: { isAvailable: true, latitude: true, longitude: true, serviceRadiusKm: true, baseCity: true, baseZone: true }
             });
 
             if (!walker.isAvailable) {
@@ -36,19 +36,31 @@ export const getWalkRequests = async (req, res) => {
                     where.zone = { contains: searchString, mode: 'insensitive' };
                 }
             } else if (walker.latitude && walker.longitude) {
-                // Default: Use precision radius based on walker's location
+                // Default: Hybrid GPS + Zone matching
                 const radius = walker.serviceRadiusKm || 5;
                 const latDelta = radius / 111;
                 const lngDelta = radius / (111 * Math.cos(walker.latitude * Math.PI / 180));
 
-                where.latitude = {
-                    gte: walker.latitude - latDelta,
-                    lte: walker.latitude + latDelta,
-                };
-                where.longitude = {
-                    gte: walker.longitude - lngDelta,
-                    lte: walker.longitude + lngDelta,
-                };
+                where.OR = [
+                    {
+                        // Match by precise coordinates
+                        latitude: {
+                            gte: walker.latitude - latDelta,
+                            lte: walker.latitude + latDelta,
+                        },
+                        longitude: {
+                            gte: walker.longitude - lngDelta,
+                            lte: walker.longitude + lngDelta,
+                        }
+                    },
+                    {
+                        // OR match by Zone name (District) as backup
+                        zone: {
+                            contains: walker.baseZone || walker.baseCity,
+                            mode: 'insensitive'
+                        }
+                    }
+                ];
             } else if (walker.baseZone || walker.baseCity) {
                 // Fallback to zone string matching if no coordinates and no manual filter
                 where.zone = {
