@@ -4,19 +4,25 @@ import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Cloudinary Config (if env vars are present)
-const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+// Cloudinary Config
+const useCloudinary = (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) || process.env.CLOUDINARY_URL;
 
 if (useCloudinary) {
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET
-    });
+    if (process.env.CLOUDINARY_URL) {
+        // Automatically uses CLOUDINARY_URL if present
+        cloudinary.config(true);
+    } else {
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+    }
 }
 
-// Helper to ensure directory exists (for local fallback)
+// Helper to ensure directory exists (only for local dev, not Vercel)
 const ensureDir = (dir) => {
+    if (process.env.VERCEL) return; // Never try to mkdir on Vercel
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -27,7 +33,8 @@ const verificationDir = 'uploads/verification';
 const walkPhotosDir = 'uploads/walk-photos';
 const dogPhotosDir = 'uploads/dog-photos';
 
-if (!useCloudinary) {
+// Only create directories in non-Vercel environments without Cloudinary
+if (!useCloudinary && !process.env.VERCEL) {
     ensureDir(profileDir);
     ensureDir(verificationDir);
     ensureDir(walkPhotosDir);
