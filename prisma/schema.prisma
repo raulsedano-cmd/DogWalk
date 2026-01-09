@@ -81,6 +81,7 @@ model User {
   // Legal & Support
   legalAcceptances LegalAcceptance[]
   supportTickets   SupportTicket[]
+  savedAddresses   SavedAddress[]
   
   @@unique([authProvider, providerUserId])
   @@index([city, zone])
@@ -405,3 +406,34 @@ enum PlatformFeeStatus {
   DUE
   SETTLED
 }
+
+// Saved Address model - Allows users to save favorite addresses
+model SavedAddress {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Address Details
+  name      String   // "Casa", "Trabajo", "Parque favorito"
+  address   String   // Full address string
+  city      String
+  zone      String
+  country   String   @default("Peru")
+  
+  // Location Coordinates
+  latitude  Float
+  longitude Float
+  
+  // Optional Address Details
+  addressType      String?  // "house", "apartment", "park"
+  addressReference String?  @db.Text // "Edificio azul, tercer piso"
+  
+  isDefault Boolean  @default(false) // Mark one as default
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([userId, isDefault])
+}
+

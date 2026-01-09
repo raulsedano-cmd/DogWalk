@@ -15,6 +15,7 @@ import legalRoutes from './routes/legal.routes.js';
 import walkerVerificationRoutes from './routes/walker-verification.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import walkerRoutes from './routes/walker.routes.js';
+import savedAddressesRoutes from './routes/saved-addresses.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/legal', legalRoutes);
 app.use('/api/walker-verification', walkerVerificationRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/walker', walkerRoutes);
+app.use('/api/saved-addresses', savedAddressesRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
