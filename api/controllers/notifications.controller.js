@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 export const getNotifications = async (req, res) => {
     try {
@@ -8,6 +9,16 @@ export const getNotifications = async (req, res) => {
             where: { userId: req.user.userId },
             orderBy: { createdAt: 'desc' },
             take: 50,
+            select: {
+                id: true,
+                userId: true,
+                type: true,
+                title: true,
+                message: true,
+                isRead: true,
+                createdAt: true
+                // Note: 'link' column excluded as it doesn't exist in DB
+            }
         });
 
         res.json(notifications);
@@ -54,7 +65,13 @@ export const markAllAsRead = async (req, res) => {
 export const createNotification = async ({ userId, type, title, message, link }) => {
     try {
         return await prisma.notification.create({
-            data: { userId, type, title, message, link },
+            data: {
+                userId,
+                type,
+                title,
+                message
+                // Note: 'link' removed as column doesn't exist in DB
+            },
         });
     } catch (error) {
         console.error('Create notification internal error:', error);

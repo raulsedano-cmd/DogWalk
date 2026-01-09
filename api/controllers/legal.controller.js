@@ -15,9 +15,8 @@ export const acceptTerms = async (req, res) => {
         const acceptance = await prisma.legalAcceptance.create({
             data: {
                 userId,
-                termsVersion: version,
-                ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                userAgent: req.headers['user-agent'] || 'unknown'
+                termsVersion: version
+                // Note: ipAddress and userAgent removed due to missing columns in DB
             }
         });
 
