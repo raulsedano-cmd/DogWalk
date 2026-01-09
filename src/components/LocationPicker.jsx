@@ -63,39 +63,31 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
         };
 
         // Specific logic for Peru/Lima
-        // District is usually 'locality' or 'administrative_area_level_3'
 
-        // 1. Try to find the district directly
-        // 'locality' is often the district (e.g., 'Santiago de Surco', 'Miraflores')
-        let zone = getComponent(['locality']);
+        // --- ZONE / DISTRITO ---
+        // Priority 1: administrative_area_level_3 (Official District in GMaps hierarchy for Peru)
+        let zone = getComponent(['administrative_area_level_3']);
 
-        // 2. If locality is generic ('Lima') or missing, look for sub-administrative areas
-        // 'sublocality_level_1' is often the district when locality is 'Lima'
-        // 'administrative_area_level_3' is also sometimes used for districts
-        if (!zone || zone === 'Lima' || zone === 'Callao') {
-            const districtCandidate = getComponent(['sublocality_level_1', 'administrative_area_level_3']);
-            if (districtCandidate) {
-                zone = districtCandidate;
+        // Priority 2: sublocality_level_1 (Often used for districts like 'Santiago de Surco' if Admin3 is missing)
+        if (!zone) {
+            zone = getComponent(['sublocality_level_1']);
+        }
+
+        // Priority 3: locality (Only if it's NOT a generic city name)
+        if (!zone) {
+            const val = getComponent(['locality']);
+            if (val && val !== 'Lima' && val !== 'Callao' && val !== 'Trujillo' && val !== 'Arequipa') {
+                zone = val;
             }
         }
 
-        // Priority for City: Admin Level 2 (Province) -> Admin Level 1 (Region)
+        // --- CITY / CIUDAD ---
+        // Priority 1: administrative_area_level_2 (Province, e.g., 'Lima Province')
         let city = getComponent(['administrative_area_level_2']);
+
+        // Priority 2: administrative_area_level_1 (Region, e.g., 'Lima Region')
         if (!city) {
             city = getComponent(['administrative_area_level_1']);
-        }
-
-        // If city is missing, use 'administrative_area_level_1' (Region/Department)
-        if (!city) {
-            city = getComponent(['administrative_area_level_1']);
-        }
-
-        // Final cleanup: Ensure zone is not same as city if possible
-        if (zone === city) {
-            // If they are equal, try to find a component that is STRICTLY a sublocality or neighborhood just to differentiate, 
-            // but ONLY if we really have duplicate info. Ideally we want the District.
-            const sub = getComponent(['sublocality_level_1']);
-            if (sub && sub !== city) zone = sub;
         }
 
         const country = getComponent(['country']);
