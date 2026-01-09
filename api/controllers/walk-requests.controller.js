@@ -205,12 +205,12 @@ export const createWalkRequest = async (req, res) => {
                 suggestedPrice: parseFloat(suggestedPrice),
                 details: details || null,
                 status: 'OPEN',
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
-                country: req.body.country || null,
-                city: req.body.city || null,
-                addressType: req.body.addressType || null,
-                addressReference: req.body.addressReference || null,
+                // latitude: latitude ? parseFloat(latitude) : null,
+                // longitude: longitude ? parseFloat(longitude) : null,
+                // country: req.body.country || null,
+                // city: req.body.city || null,
+                // addressType: req.body.addressType || null,
+                // addressReference: req.body.addressReference || null,
             },
             include: {
                 dog: true,
@@ -246,8 +246,20 @@ export const createWalkRequest = async (req, res) => {
             console.error('Notifier error (WALK_REQUEST_CREATED):', notifierErr);
         }
     } catch (error) {
-        console.error('Create walk request error:', error);
-        res.status(500).json({ error: 'Failed to create walk request' });
+        console.error('Create walk request detailed error:', error);
+        // Log inputs for debugging
+        console.error('Inputs:', {
+            body: req.body,
+            user: req.user.userId
+        });
+        if (error.code) console.error('Prisma Error Code:', error.code);
+        if (error.meta) console.error('Prisma Error Meta:', error.meta);
+
+        res.status(500).json({
+            error: 'Failed to create walk request',
+            details: error.message, // Temporary for debugging
+            prismaCode: error.code
+        });
     }
 };
 
@@ -285,12 +297,12 @@ export const updateWalkRequest = async (req, res) => {
         if (zone) updateData.zone = zone;
         if (suggestedPrice) updateData.suggestedPrice = parseFloat(suggestedPrice);
         if (details !== undefined) updateData.details = details || null;
-        if (latitude !== undefined) updateData.latitude = latitude ? parseFloat(latitude) : null;
-        if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null;
-        if (country !== undefined) updateData.country = country;
-        if (city !== undefined) updateData.city = city;
-        if (addressType !== undefined) updateData.addressType = addressType;
-        if (addressReference !== undefined) updateData.addressReference = addressReference;
+        // if (latitude !== undefined) updateData.latitude = latitude ? parseFloat(latitude) : null;
+        // if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null;
+        // if (country !== undefined) updateData.country = country;
+        // if (city !== undefined) updateData.city = city;
+        // if (addressType !== undefined) updateData.addressType = addressType;
+        // if (addressReference !== undefined) updateData.addressReference = addressReference;
 
         const request = await prisma.walkRequest.update({
             where: { id },
