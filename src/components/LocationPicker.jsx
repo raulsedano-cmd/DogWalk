@@ -106,22 +106,25 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
         // 2. Fallback: Parse components of the specific address
         if (!zone) {
             console.log('Fallback: Looking in specific address components');
+            console.log('Specific Address Components:', components);
             zone = getComponent(components, ['administrative_area_level_3']);
         }
 
         if (!zone) {
-            console.log('Fallback 2: Looking for sublocality_level_1');
-            zone = getComponent(components, ['sublocality_level_1']);
-        }
-
-        if (!zone) {
-            console.log('Fallback 3: Looking for locality (ignoring generics)');
+            console.log('Fallback 2: Looking for locality (Priority over Sublocality)');
             const val = getComponent(components, ['locality']);
             // Ignore generic city names if they appear as locality
             if (val && !['Lima', 'Callao', 'Trujillo', 'Arequipa'].includes(val)) {
                 zone = val;
             }
         }
+
+        if (!zone) {
+            console.log('Fallback 3: Looking for sublocality_level_1 (Urbanization)');
+            zone = getComponent(components, ['sublocality_level_1']);
+        }
+
+
 
         console.log('FINAL ZONE EXTRACTED:', zone);
 
