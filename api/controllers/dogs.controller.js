@@ -133,7 +133,9 @@ export const uploadDogPhoto = async (req, res) => {
             return res.status(403).json({ error: 'No tienes permiso' });
         }
 
-        const photoUrl = `/uploads/dog-photos/${req.file.filename}`;
+        // If using Cloudinary, req.file.path contains the full URL
+        // If using local storage, construct the path manually
+        const photoUrl = req.file.path || `/uploads/dog-photos/${req.file.filename}`;
         console.log(`[DEBUG] Foto guardada en: ${photoUrl}`);
 
         const updatedDog = await prisma.dog.update({
