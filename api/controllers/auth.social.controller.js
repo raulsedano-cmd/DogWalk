@@ -16,7 +16,7 @@ const generateToken = (user) => {
     );
 };
 
-const handleSocialAuth = async (email, providerUserId, authProvider, firstName, lastName) => {
+const handleSocialAuth = async (email, providerUserId, authProvider, firstName, lastName, preferredRole) => {
     // 1. Try to find user by provider specific ID
     let user = await prisma.user.findUnique({
         where: {
@@ -40,7 +40,20 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
         }
     });
 
-    if (user) return user;
+    if (user) {
+        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: { activeRole: preferredRole },
+                select: {
+                    id: true, email: true, firstName: true, lastName: true, phone: true,
+                    roles: true, activeRole: true, termsAccepted: true, verificationStatus: true,
+                    city: true, zone: true
+                }
+            });
+        }
+        return user;
+    }
 
     // 2. Try to find user by email (linked accounts)
     user = await prisma.user.findUnique({
@@ -62,25 +75,23 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
 
     if (user) {
         // Link the account
+        const updateData = {
+            authProvider,
+            providerUserId,
+            emailVerified: true
+        };
+
+        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
+            updateData.activeRole = preferredRole;
+        }
+
         user = await prisma.user.update({
             where: { id: user.id },
-            data: {
-                authProvider,
-                providerUserId,
-                emailVerified: true // OAuth providers verify email
-            },
+            data: updateData,
             select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
-                roles: true,
-                activeRole: true,
-                termsAccepted: true,
-                verificationStatus: true,
-                city: true,
-                zone: true
+                id: true, email: true, firstName: true, lastName: true, phone: true,
+                roles: true, activeRole: true, termsAccepted: true, verificationStatus: true,
+                city: true, zone: true
             }
         });
         return user;
@@ -98,7 +109,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             city: '',  // Placeholder
             zone: '',  // Placeholder
             roles: ['OWNER'],
-            activeRole: 'OWNER',
+            activeRole: (preferredRole === 'OWNER' || preferredRole === 'WALKER') ? preferredRole : 'OWNER',
             authProvider,
             providerUserId,
             emailVerified: true
@@ -121,7 +132,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
 
 export const googleLogin = async (req, res) => {
     try {
-        const { idToken } = req.body;
+        const { idToken, preferredRole } = req.body;
         if (!idToken) return res.status(400).json({ error: 'Token is required' });
 
         const ticket = await googleClient.verifyIdToken({
@@ -135,7 +146,8 @@ export const googleLogin = async (req, res) => {
             payload.sub,
             'GOOGLE',
             payload.given_name || payload.name?.split(' ')[0] || 'User',
-            payload.family_name || payload.name?.split(' ').slice(1).join(' ') || ''
+            payload.family_name || payload.name?.split(' ').slice(1).join(' ') || '',
+            preferredRole
         );
 
         const token = generateToken(user);
@@ -163,7 +175,7 @@ export const googleLogin = async (req, res) => {
 
 export const facebookLogin = async (req, res) => {
     try {
-        const { idToken } = req.body; // In Facebook, it's actually an access token usually
+        const { idToken, preferredRole } = req.body; // In Facebook, it's actually an access token usually
         if (!idToken) return res.status(400).json({ error: 'Token is required' });
 
         const response = await axios.get(`https://graph.facebook.com/me?fields=id,email,first_name,last_name&access_token=${idToken}`);
@@ -176,7 +188,8 @@ export const facebookLogin = async (req, res) => {
             id,
             'FACEBOOK',
             first_name || 'User',
-            last_name || ''
+            last_name || '',
+            preferredRole
         );
 
         const token = generateToken(user);
@@ -204,7 +217,7 @@ export const facebookLogin = async (req, res) => {
 
 export const microsoftLogin = async (req, res) => {
     try {
-        const { idToken } = req.body;
+        const { idToken, preferredRole } = req.body;
         if (!idToken) return res.status(400).json({ error: 'Token is required' });
 
         // Verify with Microsoft Graph
@@ -220,7 +233,8 @@ export const microsoftLogin = async (req, res) => {
             id,
             'MICROSOFT',
             givenName || displayName?.split(' ')[0] || 'User',
-            surname || displayName?.split(' ').slice(1).join(' ') || ''
+            surname || displayName?.split(' ').slice(1).join(' ') || '',
+            preferredRole
         );
 
         const token = generateToken(user);

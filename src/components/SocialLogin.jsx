@@ -15,7 +15,7 @@ const SocialLogin = ({ selectedRole = 'OWNER' }) => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.post(`/auth/${provider}`, { idToken: token });
+            const response = await api.post(`/auth/${provider}`, { idToken: token, preferredRole: selectedRole });
             const { token: jwt, user } = response.data;
 
             loginWithToken(user, jwt);
@@ -28,16 +28,8 @@ const SocialLogin = ({ selectedRole = 'OWNER' }) => {
             } else if (user.activeRole === 'WALKER' && user.verificationStatus === 'PENDING') {
                 navigate('/verificar-paseador');
             } else {
-                // Sincronizar activeRole con la selección si es posible
-                if (user.roles.includes(selectedRole)) {
-                    if (user.activeRole !== selectedRole) {
-                        await switchRole(selectedRole);
-                    }
-                    navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
-                } else {
-                    // Si seleccionó un rol que no tiene activado, enviarlo a activar
-                    navigate('/seleccionar-rol');
-                }
+                // Redirigir basado en el activeRole que el backend ya sincronizó
+                navigate(user.activeRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
             }
         } catch (err) {
             console.error(`${provider} login error:`, err);

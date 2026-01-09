@@ -25,7 +25,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const response = await login(formData.email, formData.password);
+            const response = await login(formData.email, formData.password, selectedRole);
             const userData = response.user;
 
             if (!userData.termsAccepted) {
@@ -34,16 +34,8 @@ const Login = () => {
                 return;
             }
 
-            // Sync activeRole with selection if possible
-            if (userData.roles.includes(selectedRole)) {
-                if (userData.activeRole !== selectedRole) {
-                    await switchRole(selectedRole);
-                }
-                navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
-            } else {
-                // If role not activated, send to selection screen
-                navigate('/seleccionar-rol');
-            }
+            // Redirigir basado en el activeRole que el backend ya sincronizó
+            navigate(userData.activeRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'Error al iniciar sesión');
         } finally {

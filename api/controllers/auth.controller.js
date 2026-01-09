@@ -86,7 +86,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, preferredRole } = req.body;
 
         // Validation
         if (!email || !password) {
@@ -94,12 +94,8 @@ export const login = async (req, res) => {
         }
 
         // Find user
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
             where: { email },
-            // Do NOT use select here because we need the password for comparison
-            // However, the error is likely because it tries to auto-select EVERYTHING.
-            // If we can't use select because we need all (including password),
-            // let's at least select everything EXPLICITLY to avoid 'role'.
             select: {
                 id: true,
                 email: true,
@@ -125,6 +121,28 @@ export const login = async (req, res) => {
 
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Handle preferredRole sync before token generation
+        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: { activeRole: preferredRole },
+                select: {
+                    id: true,
+                    email: true,
+                    password: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                    roles: true,
+                    activeRole: true,
+                    termsAccepted: true,
+                    verificationStatus: true,
+                    city: true,
+                    zone: true
+                }
+            });
         }
 
         // Generate JWT
