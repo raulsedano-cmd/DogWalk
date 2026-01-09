@@ -135,7 +135,7 @@ model Dog {
   ownerId      String
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name         String
-  size         DogSize
+  // size         DogSize // PENDING: DB column doesn't exist yet
   breed        String?
   photoUrl     String?
   behavior     String?
@@ -176,8 +176,8 @@ model WalkRequest {
   
   // Location
   // Location (partial - country/city pending migration)
-  latitude         Float?
-  longitude        Float?
+  // latitude         Float?
+  // longitude        Float?
   // country          String?  // PENDING: DB column doesn't exist yet
   // city             String?  // PENDING: DB column doesn't exist yet
   addressType      String?  

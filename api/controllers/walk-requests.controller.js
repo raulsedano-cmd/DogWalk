@@ -36,31 +36,30 @@ export const getWalkRequests = async (req, res) => {
                     where.zone = { contains: searchString, mode: 'insensitive' };
                 }
             } else if (walker.latitude && walker.longitude) {
-                // Default: Hybrid GPS + Zone matching
+                // NOTE: Radial search is temporarily disabled because 'latitude'/'longitude' 
+                // columns are missing in the current 'WalkRequest' table (DB mismatch).
+                // Re-enable this block and uncomment the coordinates once the DB is migrated.
+                /*
                 const radius = walker.serviceRadiusKm || 5;
                 const latDelta = radius / 111;
                 const lngDelta = radius / (111 * Math.cos(walker.latitude * Math.PI / 180));
 
                 where.OR = [
                     {
-                        // Match by precise coordinates
-                        latitude: {
-                            gte: walker.latitude - latDelta,
-                            lte: walker.latitude + latDelta,
-                        },
-                        longitude: {
-                            gte: walker.longitude - lngDelta,
-                            lte: walker.longitude + lngDelta,
-                        }
+                        latitude: { gte: walker.latitude - latDelta, lte: walker.latitude + latDelta },
+                        longitude: { gte: walker.longitude - lngDelta, lte: walker.longitude + lngDelta }
                     },
                     {
-                        // OR match by Zone name (District) as backup
-                        zone: {
-                            contains: walker.baseZone || walker.baseCity,
-                            mode: 'insensitive'
-                        }
+                        zone: { contains: walker.baseZone || walker.baseCity, mode: 'insensitive' }
                     }
                 ];
+                */
+
+                // FALLBACK: Filter only by Zone string while DB columns are missing
+                where.zone = {
+                    contains: walker.baseZone || walker.baseCity,
+                    mode: 'insensitive'
+                };
             } else if (walker.baseZone || walker.baseCity) {
                 // Fallback to zone string matching if no coordinates and no manual filter
                 where.zone = {
