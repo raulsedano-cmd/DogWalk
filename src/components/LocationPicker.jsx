@@ -56,41 +56,67 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
     }, []);
 
     // Helper function to extract address components correctly
-    const extractAddressComponents = (components) => {
-        const getComponent = (types) => {
-            const comp = components.find(c => types.some(t => c.types.includes(t)));
+    // Helper function to extract address components correctly
+    // Accepts either a full results array (preferred) or a single components array
+    const extractAddressComponents = (input) => {
+        // Normalization: Ensure we have access to a list of components from the most specific result
+        // and ideally the full list of results to scan for administrative levels
+        let components;
+        let fullResults = [];
+
+        if (Array.isArray(input) && input[0]?.address_components) {
+            // It's a full GeocoderResult[]
+            fullResults = input;
+            components = input[0].address_components;
+        } else if (Array.isArray(input)) {
+            // It's just address_components[]
+            components = input;
+        } else {
+            return { city: '', zone: '', country: '' };
+        }
+
+        const getComponent = (list, types) => {
+            const comp = list.find(c => types.some(t => c.types.includes(t)));
             return comp ? comp.long_name : '';
         };
 
-        // Specific logic for Peru/Lima
+        // --- ZONE / DISTRITO STRATEGY ---
+        let zone = '';
 
-        // --- ZONE / DISTRITO ---
-        // Priority 1: administrative_area_level_3 (Official District in GMaps hierarchy for Peru)
-        let zone = getComponent(['administrative_area_level_3']);
-
-        // Priority 2: sublocality_level_1 (Often used for districts like 'Santiago de Surco' if Admin3 is missing)
-        if (!zone) {
-            zone = getComponent(['sublocality_level_1']);
+        // 1. High Precision: Look for a result node that represents the District itself
+        // In Peru, this is typically 'administrative_area_level_3'
+        if (fullResults.length > 0) {
+            const districtNode = fullResults.find(r => r.types.includes('administrative_area_level_3'));
+            if (districtNode) {
+                // If found, the first component of this node is typically the district name
+                zone = districtNode.address_components[0]?.long_name;
+            }
         }
 
-        // Priority 3: locality (Only if it's NOT a generic city name)
+        // 2. Fallback: Parse components of the specific address
         if (!zone) {
-            const val = getComponent(['locality']);
-            if (val && val !== 'Lima' && val !== 'Callao' && val !== 'Trujillo' && val !== 'Arequipa') {
+            zone = getComponent(components, ['administrative_area_level_3']);
+        }
+
+        if (!zone) {
+            zone = getComponent(components, ['sublocality_level_1']);
+        }
+
+        if (!zone) {
+            const val = getComponent(components, ['locality']);
+            // Ignore generic city names if they appear as locality
+            if (val && !['Lima', 'Callao', 'Trujillo', 'Arequipa'].includes(val)) {
                 zone = val;
             }
         }
 
         // --- CITY / CIUDAD ---
-        // Priority 1: administrative_area_level_2 (Province, e.g., 'Lima Province')
-        let city = getComponent(['administrative_area_level_2']);
-
-        // Priority 2: administrative_area_level_1 (Region, e.g., 'Lima Region')
+        let city = getComponent(components, ['administrative_area_level_2']); // Province
         if (!city) {
-            city = getComponent(['administrative_area_level_1']);
+            city = getComponent(components, ['administrative_area_level_1']); // Region
         }
 
-        const country = getComponent(['country']);
+        const country = getComponent(components, ['country']);
 
         return { city, zone, country };
     };
@@ -110,7 +136,7 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                 // Update the search input value with the clicked address
                 setValue(address.formatted_address, false);
 
-                const { city, zone, country } = extractAddressComponents(address.address_components);
+                const { city, zone, country } = extractAddressComponents(results);
 
                 if (onAddressChange) {
                     onAddressChange(city, zone, country, address.formatted_address);
@@ -138,7 +164,7 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                 mapRef.current.setZoom(17);
             }
 
-            const { city, zone, country } = extractAddressComponents(results[0].address_components);
+            const { city, zone, country } = extractAddressComponents(results);
 
             if (onAddressChange) {
                 onAddressChange(city, zone, country, results[0].formatted_address);
