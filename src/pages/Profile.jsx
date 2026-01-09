@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import LocationPicker from '../components/LocationPicker';
@@ -108,8 +109,8 @@ const Profile = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-3xl">
-            <h1 className="text-3xl font-bold mb-8">Mi Perfil</h1>
+        <div className="container mx-auto px-4 py-8 max-w-3xl mt-6">
+            <h1 className="text-3xl font-bold mb-8 text-gray-800">Mi Perfil</h1>
 
             <div className="card mb-6">
                 <div className="flex justify-between items-center mb-4">
@@ -175,7 +176,43 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        {/* Location fields are now synced with LocationPicker below for consistency */}
+                        {/* Location Fields for Everyone */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Distrito (Residencia)</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.zone}
+                                    onChange={e => setFormData({ ...formData, zone: e.target.value })}
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {[
+                                        'Ancón', 'Ate', 'Barranco', 'Breña', 'Carabayllo', 'Cercado de Lima', 'Chaclacayo', 'Chorrillos', 'Cieneguilla', 'Comas', 'El Agustino', 'Independencia', 'Jesús María', 'La Molina', 'La Victoria', 'Lince', 'Los Olivos', 'Lurigancho-Chosica', 'Lurín', 'Magdalena del Mar', 'Miraflores', 'Pachacámac', 'Pucusana', 'Pueblo Libre', 'Puente Piedra', 'Punta Hermosa', 'Punta Negra', 'Rímac', 'San Bartolo', 'San Borja', 'San Isidro', 'San Juan de Lurigancho', 'San Juan de Miraflores', 'San Luis', 'San Martín de Porres', 'San Miguel', 'Santa Anita', 'Santa María del Mar', 'Santa Rosa', 'Santiago de Surco', 'Surquillo', 'Villa El Salvador', 'Villa María del Triunfo',
+                                        'Callao', 'Bellavista', 'Carmen de La Legua', 'La Perla', 'La Punta', 'Mi Perú', 'Ventanilla'
+                                    ].sort().map(dist => (
+                                        <option key={dist} value={dist}>{dist}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.city}
+                                    onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                >
+                                    <option value="Lima">Lima</option>
+                                    <option value="Callao">Callao</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end -mt-2 mb-2">
+                            <Link to="/owner/saved-addresses" className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors">
+                                <span className="text-lg">📍</span> Gestionar mis direcciones guardadas y favoritas
+                            </Link>
+                        </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Biografía</label>
