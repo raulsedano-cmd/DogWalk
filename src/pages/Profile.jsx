@@ -339,7 +339,7 @@ const Profile = () => {
                             <p><strong>Teléfono:</strong> {user.phone}</p>
                             <p><strong>Roles:</strong> {user.roles.join(', ')}</p>
                             <p><strong>Modo Actual:</strong> {user.activeRole === 'OWNER' ? 'Dueño' : 'Paseador'}</p>
-                            <p><strong>Ubicación:</strong> {user.city}, {user.zone}</p>
+                            <p><strong>Ubicación:</strong> {[user.zone, user.city, 'Perú'].filter(Boolean).join(', ')}</p>
                         </div>
 
                         {user.bio && (
