@@ -214,24 +214,36 @@ const SavedAddresses = () => {
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                                         Distrito
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
+                                        name="zone"
                                         value={formData.zone}
-                                        readOnly
-                                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 cursor-not-allowed"
-                                    />
+                                        onChange={handleInputChange}
+                                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">Selecciona un distrito</option>
+                                        {[
+                                            'Ancón', 'Ate', 'Barranco', 'Breña', 'Carabayllo', 'Cercado de Lima', 'Chaclacayo', 'Chorrillos', 'Cieneguilla', 'Comas', 'El Agustino', 'Independencia', 'Jesús María', 'La Molina', 'La Victoria', 'Lince', 'Los Olivos', 'Lurigancho-Chosica', 'Lurín', 'Magdalena del Mar', 'Miraflores', 'Pachacámac', 'Pucusana', 'Pueblo Libre', 'Puente Piedra', 'Punta Hermosa', 'Punta Negra', 'Rímac', 'San Bartolo', 'San Borja', 'San Isidro', 'San Juan de Lurigancho', 'San Juan de Miraflores', 'San Luis', 'San Martín de Porres', 'San Miguel', 'Santa Anita', 'Santa María del Mar', 'Santa Rosa', 'Santiago de Surco', 'Surquillo', 'Villa El Salvador', 'Villa María del Triunfo',
+                                            'Callao', 'Bellavista', 'Carmen de La Legua', 'La Perla', 'La Punta', 'Mi Perú', 'Ventanilla'
+                                        ].sort().map(dist => (
+                                            <option key={dist} value={dist}>{dist}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                                         Ciudad
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
+                                        name="city"
                                         value={formData.city}
-                                        readOnly
-                                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 cursor-not-allowed"
-                                    />
+                                        onChange={handleInputChange}
+                                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="Lima">Lima</option>
+                                        <option value="Callao">Callao</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
                                 </div>
                             </div>
 

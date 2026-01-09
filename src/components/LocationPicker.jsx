@@ -15,6 +15,34 @@ const defaultCenter = {
     lng: -77.0428,
 };
 
+// Trusted mapping of Postal Codes to Districts for Lima
+// Google Maps often return generic 'Lima' for locality but correct Postal Code.
+const POSTAL_CODE_DISTRICTS = {
+    '15012': 'La Molina',
+    '15023': 'Santiago de Surco',
+    '15026': 'Santiago de Surco',
+    '15033': 'Santiago de Surco',
+    '15038': 'San Borja',
+    '15037': 'San Borja',
+    '15036': 'San Isidro',
+    '15074': 'Miraflores',
+    '15063': 'Barranco',
+    '15086': 'Magdalena del Mar',
+    '15084': 'San Miguel',
+    '15046': 'Santiago de Surco',
+    '15047': 'Santiago de Surco',
+    '15048': 'Santiago de Surco',
+    '15049': 'Santiago de Surco',
+    '15088': 'San Miguel',
+    '15081': 'San Miguel',
+    '15076': 'Miraflores',
+    '15039': 'Surquillo',
+    '15034': 'Surquillo',
+    '15011': 'Ate',
+    '15001': 'Cercado de Lima',
+    '15046': 'Santiago de Surco'
+};
+
 const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
     const [marker, setMarker] = useState(null);
     const mapRef = useRef(null);
@@ -150,6 +178,14 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                     zone = potentialDistrict;
                 }
             }
+        }
+
+        // --- ULTRA FALLBACK: POSTAL CODE LOOKUP ---
+        // If we have a postal code, it is the ultimate source of truth for the District.
+        const postalCode = getComponent(components, ['postal_code']);
+        if (postalCode && POSTAL_CODE_DISTRICTS[postalCode]) {
+            console.log(`Postal Code ${postalCode} mapped to Trusted District: ${POSTAL_CODE_DISTRICTS[postalCode]}`);
+            zone = POSTAL_CODE_DISTRICTS[postalCode];
         }
 
         console.log('FINAL ZONE EXTRACTED:', zone);
