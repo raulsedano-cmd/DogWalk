@@ -156,7 +156,7 @@ const WalkerDashboard = () => {
                         alt="Profile"
                         size="16"
                         fallbackText={user.firstName}
-                        className="border-2 border-primary-500 shadow-sm"
+                        className="border-2 border-walker-500 shadow-sm"
                     />
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">Panel de Paseador</h1>
@@ -276,7 +276,7 @@ const WalkerDashboard = () => {
                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                         <p className="font-semibold text-gray-700">No hay solicitudes disponibles actualmente.</p>
                         <div className="mt-2 text-sm">
-                            <p>Tu ubicación base: <span className="text-primary-600 font-bold">{user.baseCity || 'No configurada'} {user.baseZone && `- ${user.baseZone}`}</span></p>
+                            <p>Tu ubicación base: <span className="text-walker-600 font-bold">{user.baseCity || 'No configurada'} {user.baseZone && `- ${user.baseZone}`}</span></p>
                             <p>Radio de servicio: <span className="font-bold">{user.serviceRadiusKm || 5} km</span></p>
                             <p>Estado: {user.isAvailable ? <span className="text-green-600 font-bold">Disponible</span> : <span className="text-red-600 font-bold">No Disponible</span>}</p>
                         </div>
@@ -310,7 +310,7 @@ const WalkerDashboard = () => {
                                         {new Date(request.date).toLocaleDateString()} - {request.startTime}
                                     </p>
                                     <p className="text-gray-600 text-sm mb-2">{request.durationMinutes} min</p>
-                                    <p className="text-primary-600 font-semibold">S/ {request.suggestedPrice}</p>
+                                    <p className="text-walker-600 font-semibold">S/ {request.suggestedPrice}</p>
                                     {request.details && (
                                         <p className="text-gray-500 text-sm mt-2 line-clamp-2">{request.details}</p>
                                     )}
@@ -354,7 +354,7 @@ const WalkerDashboard = () => {
                         {pendingAssignments.map(assignment => (
                             <div
                                 key={assignment.id}
-                                className="card border-l-4 border-l-primary-500 cursor-pointer hover:shadow-md transition-shadow"
+                                className="card border-l-4 border-l-walker-500 cursor-pointer hover:shadow-md transition-shadow"
                                 onClick={(e) => {
                                     // Prevent navigation if clicking on buttons
                                     if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {

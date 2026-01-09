@@ -10,56 +10,75 @@ const Header = () => {
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
 
+    const isWalker = user?.activeRole === 'WALKER';
+    const linkColor = isWalker ? 'hover:text-walker-600' : 'hover:text-primary-600';
+
     const NavLinks = () => (
         <>
             {user.activeRole === 'OWNER' ? (
                 <>
-                    <Link to="/owner/dashboard" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+                    <Link to="/owner/dashboard" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0`}>
                         Solicitudes
                     </Link>
-                    <Link to="/dogs" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+                    <Link to="/dogs" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0`}>
                         Mis Perros
                     </Link>
                 </>
             ) : (
                 <>
-                    <Link to="/walker/dashboard" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0">
+                    <Link to="/walker/dashboard" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0`}>
                         Ver Solicitudes
                     </Link>
-                    <Link to="/payments" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors font-semibold py-2 md:py-0">
+                    <Link to="/payments" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors font-semibold py-2 md:py-0`}>
                         Pagos
                     </Link>
                 </>
             )}
 
             {user.roles && user.roles.length > 1 && (
-                <Link to="/seleccionar-rol" onClick={closeMenu} className="text-primary-600 font-black py-2 md:py-0 hover:scale-105 transition-transform">
+                <Link
+                    to="/seleccionar-rol"
+                    onClick={closeMenu}
+                    className={`font-black py-2 md:py-0 hover:scale-105 transition-transform ${isWalker ? 'text-walker-600' : 'text-primary-600'
+                        }`}
+                >
                     🔄 Cambiar Modo
                 </Link>
             )}
 
-            <Link to="/my-walks" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
+            <Link to="/my-walks" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0 text-sm md:text-base`}>
                 Mis Paseos
             </Link>
 
-            <Link to="/profile" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
+            <Link to="/profile" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0 text-sm md:text-base`}>
                 Perfil
             </Link>
 
-            <Link to="/ayuda" onClick={closeMenu} className="text-gray-700 hover:text-primary-600 transition-colors py-2 md:py-0 text-sm md:text-base">
+            <Link to="/ayuda" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0 text-sm md:text-base`}>
                 Ayuda
             </Link>
         </>
     );
 
     return (
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-[100]">
+        <header className={`shadow-sm border-b sticky top-0 z-[100] transition-colors ${isWalker
+                ? 'bg-gradient-to-r from-walker-50 to-white border-walker-200'
+                : 'bg-white border-gray-200'
+            }`}>
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                    <Link to="/" className="flex items-center space-x-2 z-10">
+                    <div className="flex items-center space-x-3 z-10">
                         <span className="text-2xl">🐕</span>
                         <span className="text-xl font-bold text-primary-600">DogWalk</span>
-                    </Link>
+                        {isAuthenticated && user && (
+                            <span className={`hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-bold shadow-sm ${isWalker
+                                    ? 'bg-walker-100 text-walker-800 border border-walker-300'
+                                    : 'bg-primary-100 text-primary-800 border border-primary-300'
+                                }`}>
+                                {isWalker ? '🚶 Paseador' : '🏠 Dueño'}
+                            </span>
+                        )}
+                    </div>
 
                     {/* Desktop Navigation */}
                     {isAuthenticated ? (
