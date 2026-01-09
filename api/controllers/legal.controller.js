@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 export const acceptTerms = async (req, res) => {
     try {
@@ -23,7 +24,8 @@ export const acceptTerms = async (req, res) => {
         // Update user record
         await prisma.user.update({
             where: { id: userId },
-            data: { termsAccepted: true }
+            data: { termsAccepted: true },
+            select: { id: true, termsAccepted: true } // Explicit select to avoid 'role' column
         });
 
         res.status(201).json({
@@ -40,7 +42,13 @@ export const getLegalStatus = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.userId },
-            select: { termsAccepted: true, verificationStatus: true }
+            select: {
+                id: true,
+                termsAccepted: true,
+                verificationStatus: true,
+                roles: true,
+                activeRole: true
+            }
         });
 
         if (!user) {
