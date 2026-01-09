@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import LocationPicker from '../components/LocationPicker';
+import Avatar from '../components/Avatar';
 
 const Profile = () => {
     const { user, updateUser } = useAuth();
@@ -126,14 +127,12 @@ const Profile = () => {
 
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group">
-                        <img
-                            src={(!user.profilePhotoUrl || imgError)
-                                ? `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=CBD5E0&color=fff&size=200`
-                                : getImageUrl(user.profilePhotoUrl)
-                            }
-                            onError={() => setImgError(true)}
+                        <Avatar
+                            src={user.profilePhotoUrl}
                             alt="Profile"
-                            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg bg-gray-200"
+                            size="32"
+                            fallbackText={`${user.firstName} ${user.lastName}`}
+                            className="border-4 border-white shadow-lg"
                         />
                         {user.isVerifiedWalker && (
                             <span className="absolute bottom-1 right-1 bg-blue-500 text-white rounded-full p-1 border-2 border-white shadow-sm" title="Paseador Verificado">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
+import Avatar from '../components/Avatar';
 
 const WalkerDashboard = () => {
     const navigate = useNavigate();
@@ -150,10 +151,12 @@ const WalkerDashboard = () => {
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div className="flex items-center gap-4">
-                    <img
-                        src={getImageUrl(user.profilePhotoUrl)}
+                    <Avatar
+                        src={user.profilePhotoUrl}
                         alt="Profile"
-                        className="w-16 h-16 rounded-full object-cover border-2 border-primary-500 shadow-sm"
+                        size="16"
+                        fallbackText={user.firstName}
+                        className="border-2 border-primary-500 shadow-sm"
                     />
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">Panel de Paseador</h1>

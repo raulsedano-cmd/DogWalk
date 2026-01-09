@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
+import Avatar from '../components/Avatar';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const mapContainerStyle = {
@@ -415,11 +416,15 @@ const WalkRequestDetail = () => {
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-4">
                                         <div className="relative">
-                                            {offer.walker.profilePhotoUrl ? (
-                                                <img src={getImageUrl(offer.walker.profilePhotoUrl)} alt="profile" className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md" />
-                                            ) : (
-                                                <div className="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center text-2xl shadow-sm">👤</div>
-                                            )}
+                                            <div className="relative">
+                                                <Avatar
+                                                    src={offer.walker.profilePhotoUrl}
+                                                    alt="profile"
+                                                    size="14"
+                                                    fallbackText={offer.walker.firstName}
+                                                    className="border-2 border-white shadow-md rounded-2xl"
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
