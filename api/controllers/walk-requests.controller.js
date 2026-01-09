@@ -222,13 +222,13 @@ export const createWalkRequest = async (req, res) => {
             request,
         });
 
-        // NOTIFICATION: Notify available walkers in the same city
+        // NOTIFICATION: Notify available walkers in the same zone
         try {
             const availableWalkers = await prisma.user.findMany({
                 where: {
                     roles: { has: 'WALKER' },
                     isAvailable: true,
-                    baseCity: request.city || undefined,
+                    baseZone: request.zone || undefined,  // Use zone instead of city
                 },
                 select: { id: true }
             });
@@ -238,7 +238,7 @@ export const createWalkRequest = async (req, res) => {
                     userId: walker.id,
                     type: 'WALK_REQUEST_CREATED',
                     title: '¡Nuevo paseo disponible!',
-                    message: `Hay un nuevo paseo para ${request.dog.name} en tu ciudad.`,
+                    message: `Hay un nuevo paseo para ${request.dog.name} en tu zona.`,
                     link: `/walk-requests/${request.id}`
                 });
             }
