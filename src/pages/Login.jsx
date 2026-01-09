@@ -28,14 +28,21 @@ const Login = () => {
             const response = await login(formData.email, formData.password);
             const userData = response.user;
 
-            // If user has multiple roles and selected one that is not active, switch it
-            if (userData.roles.includes(selectedRole) && userData.activeRole !== selectedRole) {
-                const updatedUser = await switchRole(selectedRole);
+            if (!userData.termsAccepted) {
+                localStorage.setItem('preferredRole', selectedRole);
+                navigate('/aceptar-terminos');
+                return;
+            }
+
+            // Sync activeRole with selection if possible
+            if (userData.roles.includes(selectedRole)) {
+                if (userData.activeRole !== selectedRole) {
+                    await switchRole(selectedRole);
+                }
                 navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
             } else {
-                // Determine final redirect base on current activeRole if selection not possible
-                const roleToUse = userData.roles.includes(selectedRole) ? selectedRole : userData.activeRole;
-                navigate(roleToUse === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+                // If role not activated, send to selection screen
+                navigate('/seleccionar-rol');
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Error al iniciar sesión');

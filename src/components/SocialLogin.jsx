@@ -22,16 +22,21 @@ const SocialLogin = ({ selectedRole = 'OWNER' }) => {
 
             // Redirect logic based on user state
             if (!user.termsAccepted) {
+                // Save selection for after terms
+                localStorage.setItem('preferredRole', selectedRole);
                 navigate('/aceptar-terminos');
-            } else if (user.role === 'WALKER' && user.verificationStatus === 'PENDING') {
+            } else if (user.activeRole === 'WALKER' && user.verificationStatus === 'PENDING') {
                 navigate('/verificar-paseador');
             } else {
                 // Sincronizar activeRole con la selección si es posible
-                if (user.roles.includes(selectedRole) && user.activeRole !== selectedRole) {
-                    await switchRole(selectedRole);
+                if (user.roles.includes(selectedRole)) {
+                    if (user.activeRole !== selectedRole) {
+                        await switchRole(selectedRole);
+                    }
                     navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
                 } else {
-                    navigate(user.activeRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+                    // Si seleccionó un rol que no tiene activado, enviarlo a activar
+                    navigate('/seleccionar-rol');
                 }
             }
         } catch (err) {

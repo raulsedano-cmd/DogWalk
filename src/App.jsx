@@ -32,8 +32,21 @@ const HomeRoute = () => {
     if (isAuthenticated && user) {
         if (!user.termsAccepted) return <Navigate to="/aceptar-terminos" replace />;
 
-        // If user has multiple roles, let them choose
-        if (user.roles && user.roles.length > 1) {
+        // Check if there's a pending role selection from login
+        const preferredRole = localStorage.getItem('preferredRole');
+        if (preferredRole) {
+            localStorage.removeItem('preferredRole');
+            if (user.roles.includes(preferredRole)) {
+                return <Navigate to={preferredRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard'} replace />;
+            } else {
+                // If they chose a role they don't have yet, let them activate it
+                return <Navigate to="/seleccionar-rol" replace />;
+            }
+        }
+
+        // If user has multiple roles, let them choose if no clear activeRole set
+        // (Removing the forced redirect to allow auto-dashboard for existing users)
+        if (user.roles && user.roles.length > 1 && !user.activeRole) {
             return <Navigate to="/seleccionar-rol" replace />;
         }
 
