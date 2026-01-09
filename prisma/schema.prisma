@@ -175,13 +175,13 @@ model WalkRequest {
   status          WalkRequestStatus @default(OPEN)
   
   // Location
-  // Location - Temporarily disabled due to migration issues
-  // latitude         Float?
-  // longitude        Float?
-  // country          String?
-  // city             String?
-  // addressType      String?  
-  // addressReference String?  @db.Text  
+  // Location (partial - country/city pending migration)
+  latitude         Float?
+  longitude        Float?
+  // country          String?  // PENDING: DB column doesn't exist yet
+  // city             String?  // PENDING: DB column doesn't exist yet
+  addressType      String?  
+  addressReference String?  @db.Text  
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt

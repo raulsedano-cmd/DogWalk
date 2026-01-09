@@ -205,12 +205,12 @@ export const createWalkRequest = async (req, res) => {
                 suggestedPrice: parseFloat(suggestedPrice),
                 details: details || null,
                 status: 'OPEN',
-                // latitude: latitude ? parseFloat(latitude) : null,
-                // longitude: longitude ? parseFloat(longitude) : null,
-                // country: req.body.country || null,
-                // city: req.body.city || null,
-                // addressType: req.body.addressType || null,
-                // addressReference: req.body.addressReference || null,
+                latitude: latitude ? parseFloat(latitude) : null,
+                longitude: longitude ? parseFloat(longitude) : null,
+                // country: req.body.country || null,  // PENDING: DB migration blocked
+                // city: req.body.city || null,        // PENDING: DB migration blocked
+                addressType: req.body.addressType || null,
+                addressReference: req.body.addressReference || null,
             },
             include: {
                 dog: true,
@@ -297,12 +297,12 @@ export const updateWalkRequest = async (req, res) => {
         if (zone) updateData.zone = zone;
         if (suggestedPrice) updateData.suggestedPrice = parseFloat(suggestedPrice);
         if (details !== undefined) updateData.details = details || null;
-        // if (latitude !== undefined) updateData.latitude = latitude ? parseFloat(latitude) : null;
-        // if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null;
-        // if (country !== undefined) updateData.country = country;
-        // if (city !== undefined) updateData.city = city;
-        // if (addressType !== undefined) updateData.addressType = addressType;
-        // if (addressReference !== undefined) updateData.addressReference = addressReference;
+        if (latitude !== undefined) updateData.latitude = latitude ? parseFloat(latitude) : null;
+        if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null;
+        // if (country !== undefined) updateData.country = country;  // PENDING: DB migration blocked
+        // if (city !== undefined) updateData.city = city;            // PENDING: DB migration blocked
+        if (addressType !== undefined) updateData.addressType = addressType;
+        if (addressReference !== undefined) updateData.addressReference = addressReference;
 
         const request = await prisma.walkRequest.update({
             where: { id },
