@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import LocationPicker from '../components/LocationPicker';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -159,96 +159,79 @@ const SavedAddresses = () => {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Ciudad *
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium mb-3">
+                                    Ubicación Exacta *
                                 </label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    value={formData.city}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    required
+                                <LocationPicker
+                                    label="Buscar dirección o seleccionar en el mapa"
+                                    lat={formData.latitude ? parseFloat(formData.latitude) : null}
+                                    lng={formData.longitude ? parseFloat(formData.longitude) : null}
+                                    onChange={(lat, lng) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            latitude: lat,
+                                            longitude: lng
+                                        }));
+                                    }}
+                                    onAddressChange={(city, zone, country, fullAddress) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            city: city || prev.city,
+                                            zone: zone || city || prev.zone,
+                                            country: country || 'Peru',
+                                            address: fullAddress || prev.address
+                                        }));
+                                    }}
                                 />
+                                {(!formData.latitude || !formData.longitude) && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        Debes seleccionar una ubicación en el mapa
+                                    </p>
+                                )}
                             </div>
 
-                            <div className="md:col-span-2">
+                            {/* Hidden fields for validation if needed, though state handles it */}
+
+                            {/* Address details that might need manual correction or confirmation */}
+                            <div className="md:col-span-2 mt-4">
                                 <label className="block text-sm font-medium mb-1">
-                                    Dirección completa *
+                                    Dirección (Autocompletado) *
                                 </label>
                                 <input
                                     type="text"
                                     name="address"
                                     value={formData.address}
                                     onChange={handleInputChange}
-                                    placeholder="Calle, número, distrito"
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    required
+                                    className="w-full px-3 py-2 border rounded-lg bg-gray-50"
+                                    readOnly // User should use logic picker, but okay to edit? Let's make it editable
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium mb-1">
-                                    Zona *
+                                    Ciudad
+                                </label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border rounded-lg bg-gray-50"
+                                    readOnly
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    Zona
                                 </label>
                                 <input
                                     type="text"
                                     name="zone"
                                     value={formData.zone}
                                     onChange={handleInputChange}
-                                    placeholder="Ej: Miraflores, San Isidro"
                                     className="w-full px-3 py-2 border rounded-lg"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Tipo de dirección
-                                </label>
-                                <select
-                                    name="addressType"
-                                    value={formData.addressType}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    <option value="house">Casa</option>
-                                    <option value="apartment">Apartamento</option>
-                                    <option value="park">Parque</option>
-                                    <option value="office">Oficina</option>
-                                    <option value="other">Otro</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Latitud *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    name="latitude"
-                                    value={formData.latitude}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Longitud *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    name="longitude"
-                                    value={formData.longitude}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    required
                                 />
                             </div>
 
