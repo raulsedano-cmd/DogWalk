@@ -124,10 +124,17 @@ export const login = async (req, res) => {
         }
 
         // Handle preferredRole sync before token generation
-        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
+        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
+        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
+
+        if (preferredRole && (!hasRole || needsSwitch)) {
+            const updateData = {};
+            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
+            if (needsSwitch) updateData.activeRole = preferredRole;
+
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: { activeRole: preferredRole },
+                data: updateData,
                 select: {
                     id: true,
                     email: true,

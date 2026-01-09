@@ -41,10 +41,17 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
     });
 
     if (user) {
-        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
+        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
+        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
+
+        if (preferredRole && (!hasRole || needsSwitch)) {
+            const updateData = {};
+            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
+            if (needsSwitch) updateData.activeRole = preferredRole;
+
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: { activeRole: preferredRole },
+                data: updateData,
                 select: {
                     id: true, email: true, firstName: true, lastName: true, phone: true,
                     roles: true, activeRole: true, termsAccepted: true, verificationStatus: true,
@@ -81,8 +88,12 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             emailVerified: true
         };
 
-        if (preferredRole && user.roles.includes(preferredRole) && user.activeRole !== preferredRole) {
-            updateData.activeRole = preferredRole;
+        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
+        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
+
+        if (preferredRole && (!hasRole || needsSwitch)) {
+            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
+            if (needsSwitch) updateData.activeRole = preferredRole;
         }
 
         user = await prisma.user.update({
@@ -108,8 +119,8 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             phone: '', // Placeholder, user will be prompted to complete
             city: '',  // Placeholder
             zone: '',  // Placeholder
-            roles: ['OWNER'],
-            activeRole: (preferredRole === 'OWNER' || preferredRole === 'WALKER') ? preferredRole : 'OWNER',
+            roles: preferredRole === 'WALKER' ? ['OWNER', 'WALKER'] : ['OWNER'],
+            activeRole: preferredRole || 'OWNER',
             authProvider,
             providerUserId,
             emailVerified: true
