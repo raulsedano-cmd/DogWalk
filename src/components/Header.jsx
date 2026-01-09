@@ -1,14 +1,31 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
-    const { user, logout, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const { user, logout, isAuthenticated, switchRole } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [switching, setSwitching] = useState(false);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
+
+    const handleSwitch = async () => {
+        const targetRole = user.activeRole === 'OWNER' ? 'WALKER' : 'OWNER';
+        setSwitching(true);
+        try {
+            await switchRole(targetRole);
+            closeMenu();
+            navigate(targetRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+        } catch (error) {
+            console.error('Error switching role:', error);
+            alert('Error al cambiar de modo');
+        } finally {
+            setSwitching(false);
+        }
+    };
 
     const isWalker = user?.activeRole === 'WALKER';
     const linkColor = isWalker ? 'hover:text-walker-600' : 'hover:text-primary-600';
@@ -36,14 +53,14 @@ const Header = () => {
             )}
 
             {user.roles && user.roles.length > 1 && (
-                <Link
-                    to="/seleccionar-rol"
-                    onClick={closeMenu}
-                    className={`font-black py-2 md:py-0 hover:scale-105 transition-transform ${isWalker ? 'text-walker-600' : 'text-primary-600'
-                        }`}
+                <button
+                    onClick={handleSwitch}
+                    disabled={switching}
+                    className={`font-bold py-2 md:py-1 px-3 rounded-full border border-current text-xs transition-transform hover:scale-105 ${isWalker ? 'text-primary-600 border-primary-100 hover:bg-primary-50' : 'text-walker-600 border-walker-100 hover:bg-walker-50'
+                        } ${switching ? 'opacity-50 cursor-wait' : ''}`}
                 >
-                    🔄 Cambiar Modo
-                </Link>
+                    {switching ? '...' : `✨ Cambiar a ${isWalker ? 'Dueño' : 'Paseador'}`}
+                </button>
             )}
 
             <Link to="/my-walks" onClick={closeMenu} className={`text-gray-700 ${linkColor} transition-colors py-2 md:py-0 text-sm md:text-base`}>
@@ -62,8 +79,8 @@ const Header = () => {
 
     return (
         <header className={`shadow-sm border-b sticky top-0 z-[100] transition-colors ${isWalker
-                ? 'bg-gradient-to-r from-walker-50 to-white border-walker-200'
-                : 'bg-white border-gray-200'
+            ? 'bg-gradient-to-r from-walker-50 to-white border-walker-200'
+            : 'bg-white border-gray-200'
             }`}>
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
@@ -72,8 +89,8 @@ const Header = () => {
                         <span className="text-xl font-bold text-primary-600">DogWalk</span>
                         {isAuthenticated && user && (
                             <span className={`hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-bold shadow-sm ${isWalker
-                                    ? 'bg-walker-100 text-walker-800 border border-walker-300'
-                                    : 'bg-primary-100 text-primary-800 border border-primary-300'
+                                ? 'bg-walker-100 text-walker-800 border border-walker-300'
+                                : 'bg-primary-100 text-primary-800 border border-primary-300'
                                 }`}>
                                 {isWalker ? '🚶 Paseador' : '🏠 Dueño'}
                             </span>

@@ -29,9 +29,12 @@ export const getWalkRequests = async (req, res) => {
 
             // PRECISION FILTERING: Priority logic
             if (city || zone) {
-                // If the walker explicitly searches for a city or zone, use those filters
-                if (city) where.city = { contains: city, mode: 'insensitive' };
-                if (zone) where.zone = { contains: zone, mode: 'insensitive' };
+                // If the walker explicitly searches, prioritize 'zone' field mapping
+                // Since city column doesn't exist on WalkRequest table yet, we search within 'zone'
+                const searchString = zone || city;
+                if (searchString) {
+                    where.zone = { contains: searchString, mode: 'insensitive' };
+                }
             } else if (walker.latitude && walker.longitude) {
                 // Default: Use precision radius based on walker's location
                 const radius = walker.serviceRadiusKm || 5;
@@ -46,9 +49,12 @@ export const getWalkRequests = async (req, res) => {
                     gte: walker.longitude - lngDelta,
                     lte: walker.longitude + lngDelta,
                 };
-            } else if (walker.baseCity) {
-                // Fallback to city string if no coordinates and no manual filter
-                where.city = { contains: walker.baseCity, mode: 'insensitive' };
+            } else if (walker.baseZone || walker.baseCity) {
+                // Fallback to zone string matching if no coordinates and no manual filter
+                where.zone = {
+                    contains: walker.baseZone || walker.baseCity,
+                    mode: 'insensitive'
+                };
             }
 
         } else if (req.user.activeRole === 'OWNER') {

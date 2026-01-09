@@ -207,12 +207,12 @@ const WalkerDashboard = () => {
             )}
 
             {/* Config Validity Alert */}
-            {user.role === 'WALKER' && (!user.baseCity || !user.baseZone) && (
+            {user.role === 'WALKER' && (!user.baseCity && !user.baseZone && !user.latitude) && (
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
                     <div className="flex">
                         <div className="ml-3">
                             <p className="text-sm text-yellow-700">
-                                ⚠️ Configura tu <strong>Ciudad Base</strong> y <strong>Zona Base</strong> en tu <Link to="/profile" className="underline font-bold">Perfil</Link> para recibir solicitudes relevantes.
+                                ⚠️ Configura tu <strong>Ubicación de Servicio</strong> en tu <Link to="/profile" className="underline font-bold">Perfil</Link> para recibir solicitudes en tu zona.
                             </p>
                         </div>
                     </div>
@@ -276,7 +276,9 @@ const WalkerDashboard = () => {
                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                         <p className="font-semibold text-gray-700">No hay solicitudes disponibles actualmente.</p>
                         <div className="mt-2 text-sm">
-                            <p>Tu ubicación base: <span className="text-walker-600 font-bold">{user.baseCity || 'No configurada'} {user.baseZone && `- ${user.baseZone}`}</span></p>
+                            <p>Tu área de servicio: <span className="text-walker-600 font-bold">
+                                {user.baseZone || user.baseCity || (user.latitude ? 'Configurada (GPS)' : 'No configurada')}
+                            </span></p>
                             <p>Radio de servicio: <span className="font-bold">{user.serviceRadiusKm || 5} km</span></p>
                             <p>Estado: {user.isAvailable ? <span className="text-green-600 font-bold">Disponible</span> : <span className="text-red-600 font-bold">No Disponible</span>}</p>
                         </div>

@@ -246,7 +246,7 @@ const Profile = () => {
                                     </div>
 
                                     <LocationPicker
-                                        label="Ubicación Base (Punto Central)"
+                                        label="Ubicación Base de Servicio (Donde trabajarás)"
                                         lat={formData.latitude}
                                         lng={formData.longitude}
                                         onChange={(lat, lng) => setFormData({ ...formData, latitude: lat, longitude: lng })}
@@ -256,11 +256,13 @@ const Profile = () => {
                                                 ...prev,
                                                 baseCity: city || prev.baseCity,
                                                 baseZone: finalZone,
-                                                city: city || prev.city,
-                                                zone: finalZone
+                                                // Removed city/zone update to keep residency independent
                                             }));
                                         }}
                                     />
+                                    <p className="text-xs text-gray-500 italic -mt-2">
+                                        💡 Esta ubicación define el centro de tu radio de trabajo y es privada.
+                                    </p>
 
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
