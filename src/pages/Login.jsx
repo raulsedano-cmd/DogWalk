@@ -9,6 +9,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [selectedRole, setSelectedRole] = useState('OWNER');
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -25,8 +26,17 @@ const Login = () => {
 
         try {
             const response = await login(formData.email, formData.password);
-            const { user: userData } = response;
-            navigate(userData.role === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+            const userData = response.user;
+
+            // If user has multiple roles and selected one that is not active, switch it
+            if (userData.roles.includes(selectedRole) && userData.activeRole !== selectedRole) {
+                const updatedUser = await switchRole(selectedRole);
+                navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+            } else {
+                // Determine final redirect base on current activeRole if selection not possible
+                const roleToUse = userData.roles.includes(selectedRole) ? selectedRole : userData.activeRole;
+                navigate(roleToUse === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Error al iniciar sesión');
         } finally {
@@ -43,6 +53,30 @@ const Login = () => {
                 </div>
 
                 <div className="card">
+                    {/* Role Selection Tabs */}
+                    <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedRole('OWNER')}
+                            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${selectedRole === 'OWNER'
+                                ? 'bg-white text-primary-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            🏠 Soy Dueño
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedRole('WALKER')}
+                            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${selectedRole === 'WALKER'
+                                ? 'bg-white text-walker-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            🚶 Soy Paseador
+                        </button>
+                    </div>
+
                     {error && (
                         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                             {error}
@@ -83,9 +117,14 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full btn-primary"
+                            className={`w-full py-3 rounded-xl font-bold text-white transition-all shadow-md active:scale-95 ${loading
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : selectedRole === 'OWNER'
+                                    ? 'bg-primary-600 hover:bg-primary-700'
+                                    : 'bg-walker-600 hover:bg-walker-700'
+                                }`}
                         >
-                            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                            {loading ? 'Iniciando sesión...' : `Entrar como ${selectedRole === 'OWNER' ? 'Dueño' : 'Paseador'}`}
                         </button>
                     </form>
 
@@ -96,7 +135,7 @@ const Login = () => {
                         </Link>
                     </div>
 
-                    <SocialLogin />
+                    <SocialLogin selectedRole={selectedRole} />
 
                     <div className="mt-6 p-3 bg-gray-100 rounded text-[11px] text-gray-500">
                         <p className="font-semibold mb-1">Cuentas de prueba:</p>

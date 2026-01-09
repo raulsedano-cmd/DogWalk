@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
-const SocialLogin = () => {
-    const { loginWithToken } = useAuth();
+const SocialLogin = ({ selectedRole = 'OWNER' }) => {
+    const { loginWithToken, switchRole } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -26,7 +26,13 @@ const SocialLogin = () => {
             } else if (user.role === 'WALKER' && user.verificationStatus === 'PENDING') {
                 navigate('/verificar-paseador');
             } else {
-                navigate(user.role === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+                // Sincronizar activeRole con la selección si es posible
+                if (user.roles.includes(selectedRole) && user.activeRole !== selectedRole) {
+                    await switchRole(selectedRole);
+                    navigate(selectedRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+                } else {
+                    navigate(user.activeRole === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
+                }
             }
         } catch (err) {
             console.error(`${provider} login error:`, err);
