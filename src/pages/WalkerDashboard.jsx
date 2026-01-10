@@ -6,22 +6,30 @@ import api from '../services/api';
 const WalkerDashboard = () => {
     const { user, setUser } = useAuth();
     const [assignments, setAssignments] = useState([]);
+    const [availableRequests, setAvailableRequests] = useState([]);
     const [stats, setStats] = useState({ totalWalks: 0, rating: 5, earnings: 0 });
     const [loading, setLoading] = useState(true);
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
+    const [filters, setFilters] = useState({ city: '', zone: '' });
 
     useEffect(() => {
         loadData();
     }, []);
 
-    const loadData = async () => {
+    const loadData = async (searchFilters = filters) => {
         try {
-            const [assignRes, statsRes] = await Promise.all([
+            const queryParams = new URLSearchParams();
+            if (searchFilters.city) queryParams.append('city', searchFilters.city);
+            if (searchFilters.zone) queryParams.append('zone', searchFilters.zone);
+
+            const [assignRes, statsRes, marketRes] = await Promise.all([
                 api.get('/walk-assignments/my-missions'),
-                api.get('/walk-assignments/stats')
+                api.get('/walk-assignments/stats'),
+                api.get(`/walk-requests?${queryParams.toString()}`)
             ]);
             setAssignments(assignRes.data || []);
             setStats(statsRes.data || { totalWalks: 0, rating: 5, earnings: 0 });
+            setAvailableRequests(marketRes.data.requests || []);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -29,11 +37,20 @@ const WalkerDashboard = () => {
         }
     };
 
+    const handleSearch = (e) => {
+        e.preventDefault();
+        loadData();
+    };
+
     const toggleAvailability = async () => {
         setAvailabilityLoading(true);
         try {
             const response = await api.put('/users/availability', { isAvailable: !user.isAvailable });
             setUser({ ...user, isAvailable: response.data.isAvailable });
+            // Reload requests if we just became available
+            if (!user.isAvailable) {
+                loadData();
+            }
         } catch (error) {
             console.error('Error toggling availability');
         } finally {
@@ -117,26 +134,26 @@ const WalkerDashboard = () => {
                 </div>
 
                 {/* Tactical Missions Container */}
-                <section>
+                <section className="mb-16">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
-                        <h2 className="text-2xl font-black text-navy-900 uppercase">Misiones Activas</h2>
+                        <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Misiones Activas</h2>
                     </div>
 
                     {activeMissions.length === 0 ? (
-                        <div className="card-premium !p-16 text-center bg-slate-50/20 border-dashed border-2">
+                        <div className="card-premium !p-12 text-center bg-slate-50/20 border-dashed border-2">
                             <h3 className="text-lg font-black text-navy-900 mb-2">Sin misiones asignadas.</h3>
                             <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em]">Permanece en línea para recibir solicitudes.</p>
                         </div>
                     ) : (
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {activeMissions.map(m => (
                                 <div key={m.id} className="bg-navy-900 rounded-[28px] p-8 border border-white/5 flex flex-col justify-between group hover:border-primary-500/20 transition-all backdrop-blur-3xl shadow-2xl">
-                                    <div className="flex justify-between items-start mb-8">
+                                    <div className="flex justify-between items-start mb-8 text-white">
                                         <div className="flex gap-4">
                                             <div className="w-14 h-14 bg-white/5 rounded-[18px] flex items-center justify-center text-3xl">🐕</div>
                                             <div>
-                                                <h3 className="text-xl font-black text-white tracking-tighter leading-none mb-1">{m.walkRequest.dog.name}</h3>
+                                                <h3 className="text-xl font-black tracking-tighter leading-none mb-1">{m.walkRequest.dog.name}</h3>
                                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{m.walkRequest.zone}</p>
                                             </div>
                                         </div>
@@ -169,6 +186,128 @@ const WalkerDashboard = () => {
                                 </div>
                             ))}
                         </div>
+                    )}
+                </section>
+
+                {/* Marketplace Flow */}
+                <section>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-8 bg-emerald-500 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Mercado</h2>
+                        </div>
+
+                        {user.isAvailable && (
+                            <form onSubmit={handleSearch} className="flex flex-wrap gap-2 w-full md:w-auto">
+                                <input
+                                    type="text"
+                                    placeholder="Ciudad..."
+                                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none w-full sm:w-32"
+                                    value={filters.city}
+                                    onChange={e => setFilters({ ...filters, city: e.target.value })}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Distrito/Zona..."
+                                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none w-full sm:w-40"
+                                    value={filters.zone}
+                                    onChange={e => setFilters({ ...filters, zone: e.target.value })}
+                                />
+                                <button type="submit" className="bg-navy-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary-600 transition-colors">Filtrar 🔍</button>
+                                {(filters.city || filters.zone) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newFilters = { city: '', zone: '' };
+                                            setFilters(newFilters);
+                                            loadData(newFilters);
+                                        }}
+                                        className="text-slate-400 hover:text-red-500 text-[10px] font-bold uppercase tracking-widest px-2"
+                                    >
+                                        Limpiar
+                                    </button>
+                                )}
+                            </form>
+                        )}
+                    </div>
+
+                    {!user.isAvailable ? (
+                        <div className="card-premium !p-16 text-center bg-orange-50/20 border-orange-100 border-2 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-400 to-transparent animate-pulse"></div>
+                            <div className="text-5xl mb-6 grayscale opacity-20">📡</div>
+                            <h3 className="text-lg font-black text-navy-900 mb-2 italic">Terminal Desactivada</h3>
+                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xs mx-auto mb-8">Debes iniciar tu turno para sincronizar pedidos en tiempo real en tu zona.</p>
+                            <button onClick={toggleAvailability} className="btn-primary !h-14 !px-12 !rounded-[20px] shadow-xl shadow-primary-500/20">Activar Señal 🔥</button>
+                        </div>
+                    ) : (
+                        <>
+                            {availableRequests.length > 0 && (
+                                <div className="flex items-center gap-2 mb-6 text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100 italic">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    Sincronizando {availableRequests.length} oportunidades en vivo
+                                </div>
+                            )}
+
+                            {availableRequests.length === 0 ? (
+                                <div className="card-premium !p-16 text-center bg-slate-50/20 border-dashed border-2">
+                                    <div className="text-6xl mb-6 grayscale opacity-10">🛡️</div>
+                                    <h3 className="text-lg font-black text-navy-900 mb-2">Sin pedidos coincidentes.</h3>
+                                    <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em] mb-6">Prueba a cambiar los filtros o ampliar tu radio de servicio.</p>
+                                    {(filters.city || filters.zone) && (
+                                        <button
+                                            onClick={() => {
+                                                const newFilters = { city: '', zone: '' };
+                                                setFilters(newFilters);
+                                                loadData(newFilters);
+                                            }}
+                                            className="text-primary-600 font-black text-[10px] uppercase tracking-widest underline"
+                                        >
+                                            Ver todo el mercado
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {availableRequests.map(request => (
+                                        <div key={request.id} className="card-premium !p-8 hover:shadow-xl transition-all border-slate-100 group flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-14 h-14 bg-slate-50 rounded-[18px] flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">🐕</div>
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-navy-900 tracking-tighter mb-1 uppercase italic">{request.dog.name}</h3>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                <p className="text-[8px] font-black text-slate-400 tracking-widest uppercase">{request.zone}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-emerald-100">S/ {request.suggestedPrice}</div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3 mb-8">
+                                                    <div className="bg-slate-50 p-4 rounded-[16px] border border-slate-100">
+                                                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">Misión</p>
+                                                        <p className="text-navy-900 font-bold text-[10px]">{request.durationMinutes} Minutos</p>
+                                                    </div>
+                                                    <div className="bg-slate-50 p-4 rounded-[16px] border border-slate-100">
+                                                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">Inicio</p>
+                                                        <p className="text-navy-900 font-bold text-[10px] italic">{request.startTime}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <Link to={`/walk-requests/${request.id}`} className="w-full btn-navy !h-14 !text-[11px] !rounded-[18px] !shadow-lg flex items-center justify-center gap-3 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all">
+                                                Postular a Misión 🚀
+                                            </Link>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </section>
             </div>
