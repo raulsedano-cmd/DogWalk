@@ -19,7 +19,8 @@ import savedAddressesRoutes from './routes/saved-addresses.routes.js';
 import trackingRoutes from './routes/tracking.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import { debugDatabase } from './controllers/debug.controller.js';
+import { debugDatabase, debugWalkerView } from './controllers/debug.controller.js';
+import { authenticate } from './middleware/auth.middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,8 +55,9 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'Dog Walking API is running' });
 });
 
-// Temporary debug route
+// Temporary debug routes
 app.get('/api/debug-db', debugDatabase);
+app.get('/api/debug-walker', authenticate, debugWalkerView);
 
 // Routes
 app.use('/api/auth', authRoutes);
