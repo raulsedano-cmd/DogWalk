@@ -23,7 +23,9 @@ async function main() {
             where: { status: 'OPEN' },
             select: { id: true, zone: true, date: true, ownerId: true }
         });
-        console.log('Open Requests:', requests);
+        console.log(`Found ${requests.length} Open Requests:`);
+        requests.forEach(r => console.log(`- Request ${r.id}: Owner ${r.ownerId}, Zone ${r.zone}`));
+
 
         /*
         const users = await prisma.user.findMany({
