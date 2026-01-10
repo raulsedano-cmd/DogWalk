@@ -219,3 +219,20 @@ export const getUserById = async (req, res) => {
         res.status(500).json({ error: 'Failed to get user' });
     }
 };
+
+export const toggleAvailability = async (req, res) => {
+    try {
+        const { isAvailable } = req.body;
+
+        const user = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { isAvailable: !!isAvailable },
+            select: { isAvailable: true }
+        });
+
+        res.json(user);
+    } catch (error) {
+        console.error('Toggle availability error:', error);
+        res.status(500).json({ error: 'Error al cambiar disponibilidad' });
+    }
+};
