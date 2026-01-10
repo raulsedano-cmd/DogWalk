@@ -92,12 +92,12 @@ const WalkerDashboard = () => {
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
                                 <div className={`w-2 h-2 rounded-full ${user.isAvailable ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-600'} animate-pulse`}></div>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Walker Terminal • {user.isAvailable ? 'En Línea' : 'Desconectado'}</span>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Panel del Paseador • {user.isAvailable ? 'Conectado' : 'Fuera de línea'}</span>
                             </div>
                             <h1 className="text-5xl lg:text-7xl font-black text-white leading-[0.8] tracking-tighter italic">
-                                Ready for <span className="text-primary-600">Duty.</span>
+                                ¡Listo para <span className="text-primary-600">pasear!</span>
                             </h1>
-                            <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.4em] max-w-xs">{user.isAvailable ? 'Sincronizando señal GPS con la red central' : 'Terminal en espera de activación'}</p>
+                            <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.4em] max-w-xs">{user.isAvailable ? 'Buscando paseos cerca de ti' : 'Activa tu turno para ver pedidos'}</p>
                         </div>
 
                         <button
@@ -108,7 +108,7 @@ const WalkerDashboard = () => {
                                 : 'bg-primary-600 text-white hover:bg-black shadow-primary-500/20'
                                 }`}
                         >
-                            {availabilityLoading ? 'Sincronizando...' : (user.isAvailable ? 'Finalizar Turno' : 'Iniciar Turno 🔥')}
+                            {availabilityLoading ? 'Cambiando...' : (user.isAvailable ? 'Dejar de pasear' : 'Empezar a buscar paseos 👋')}
                         </button>
                     </div>
                 </div>
@@ -137,13 +137,13 @@ const WalkerDashboard = () => {
                 <section className="mb-16">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
-                        <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Misiones Activas</h2>
+                        <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Tus Paseos Pendientes</h2>
                     </div>
 
                     {activeMissions.length === 0 ? (
                         <div className="card-premium !p-12 text-center bg-slate-50/20 border-dashed border-2">
-                            <h3 className="text-lg font-black text-navy-900 mb-2">Sin misiones asignadas.</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em]">Permanece en línea para recibir solicitudes.</p>
+                            <h3 className="text-lg font-black text-navy-900 mb-2">No tienes paseos asignados por ahora.</h3>
+                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em]">Mantente conectado para recibir nuevos pedidos.</p>
                         </div>
                     ) : (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -173,13 +173,13 @@ const WalkerDashboard = () => {
 
                                     <div className="space-y-3">
                                         {m.status === 'ASSIGNED' && (
-                                            <button onClick={() => handleUpdateStatus(m.id, 'ARRIVED')} className="w-full btn-primary !h-12 !text-[11px] !rounded-[14px]">He llegado 📍</button>
+                                            <button onClick={() => handleUpdateStatus(m.id, 'ARRIVED')} className="w-full btn-primary !h-12 !text-[11px] !rounded-[14px]">Ya llegué 📍</button>
                                         )}
                                         {m.status === 'ARRIVED' && (
-                                            <button onClick={() => handleUpdateStatus(m.id, 'IN_PROGRESS')} className="w-full btn-primary !bg-emerald-600 hover:!bg-emerald-700 !h-12 !text-[11px] !rounded-[14px]">Iniciar Misión 🐕</button>
+                                            <button onClick={() => handleUpdateStatus(m.id, 'IN_PROGRESS')} className="w-full btn-primary !bg-emerald-600 hover:!bg-emerald-700 !h-12 !text-[11px] !rounded-[14px]">Empezar Paseo 🐕</button>
                                         )}
                                         {m.status === 'IN_PROGRESS' && (
-                                            <Link to={`/walk-assignments/${m.id}/in-progress`} className="w-full btn-primary !bg-indigo-600 hover:!bg-indigo-700 !h-12 !text-[11px] !rounded-[14px] animate-pulse">Consola en Vivo 🛰️</Link>
+                                            <Link to={`/walk-assignments/${m.id}/in-progress`} className="w-full btn-primary !bg-indigo-600 hover:!bg-indigo-700 !h-12 !text-[11px] !rounded-[14px] animate-pulse">Seguir Paseo 🛰️</Link>
                                         )}
                                         <Link to={`/walk-requests/${m.walkRequestId}`} className="block text-center text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] py-2 hover:text-white transition-colors">Ver Detalles</Link>
                                     </div>
@@ -194,7 +194,7 @@ const WalkerDashboard = () => {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                         <div className="flex items-center gap-4">
                             <div className="w-2 h-8 bg-emerald-500 rounded-full"></div>
-                            <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Mercado</h2>
+                            <h2 className="text-2xl font-black text-navy-900 uppercase tracking-tight">Encuentra Paseos</h2>
                         </div>
 
                         {user.isAvailable && (
@@ -213,7 +213,7 @@ const WalkerDashboard = () => {
                                     value={filters.zone}
                                     onChange={e => setFilters({ ...filters, zone: e.target.value })}
                                 />
-                                <button type="submit" className="bg-navy-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary-600 transition-colors">Filtrar 🔍</button>
+                                <button type="submit" className="bg-navy-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary-600 transition-colors">Buscar 🔍</button>
                                 {(filters.city || filters.zone) && (
                                     <button
                                         type="button"
@@ -234,10 +234,10 @@ const WalkerDashboard = () => {
                     {!user.isAvailable ? (
                         <div className="card-premium !p-16 text-center bg-orange-50/20 border-orange-100 border-2 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-400 to-transparent animate-pulse"></div>
-                            <div className="text-5xl mb-6 grayscale opacity-20">📡</div>
-                            <h3 className="text-lg font-black text-navy-900 mb-2 italic">Terminal Desactivada</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xs mx-auto mb-8">Debes iniciar tu turno para sincronizar pedidos en tiempo real en tu zona.</p>
-                            <button onClick={toggleAvailability} className="btn-primary !h-14 !px-12 !rounded-[20px] shadow-xl shadow-primary-500/20">Activar Señal 🔥</button>
+                            <div className="text-5xl mb-6 grayscale opacity-20">👋</div>
+                            <h3 className="text-lg font-black text-navy-900 mb-2 italic">Estás desconectado</h3>
+                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xs mx-auto mb-8">Activa tu turno para que los dueños puedan encontrarte y veas paseos cerca.</p>
+                            <button onClick={toggleAvailability} className="btn-primary !h-14 !px-12 !rounded-[20px] shadow-xl shadow-primary-500/20">Empezar a pasear 🔥</button>
                         </div>
                     ) : (
                         <>
@@ -247,15 +247,15 @@ const WalkerDashboard = () => {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                     </span>
-                                    Sincronizando {availableRequests.length} oportunidades en vivo
+                                    Buscando {availableRequests.length} paseos disponibles ahora
                                 </div>
                             )}
 
                             {availableRequests.length === 0 ? (
                                 <div className="card-premium !p-16 text-center bg-slate-50/20 border-dashed border-2">
-                                    <div className="text-6xl mb-6 grayscale opacity-10">🛡️</div>
-                                    <h3 className="text-lg font-black text-navy-900 mb-2">Sin pedidos coincidentes.</h3>
-                                    <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em] mb-6">Prueba a cambiar los filtros o ampliar tu radio de servicio.</p>
+                                    <div className="text-6xl mb-6 grayscale opacity-10">🐾</div>
+                                    <h3 className="text-lg font-black text-navy-900 mb-2">No hay paseos por aquí.</h3>
+                                    <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em] mb-6">Prueba a buscar en otro distrito o espera un momento.</p>
                                     {(filters.city || filters.zone) && (
                                         <button
                                             onClick={() => {
@@ -265,7 +265,7 @@ const WalkerDashboard = () => {
                                             }}
                                             className="text-primary-600 font-black text-[10px] uppercase tracking-widest underline"
                                         >
-                                            Ver todo el mercado
+                                            Ver todos los paseos
                                         </button>
                                     )}
                                 </div>
@@ -290,7 +290,7 @@ const WalkerDashboard = () => {
 
                                                 <div className="grid grid-cols-2 gap-3 mb-8">
                                                     <div className="bg-slate-50 p-4 rounded-[16px] border border-slate-100">
-                                                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">Misión</p>
+                                                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">Duración</p>
                                                         <p className="text-navy-900 font-bold text-[10px]">{request.durationMinutes} Minutos</p>
                                                     </div>
                                                     <div className="bg-slate-50 p-4 rounded-[16px] border border-slate-100">
@@ -301,7 +301,7 @@ const WalkerDashboard = () => {
                                             </div>
 
                                             <Link to={`/walk-requests/${request.id}`} className="w-full btn-navy !h-14 !text-[11px] !rounded-[18px] !shadow-lg flex items-center justify-center gap-3 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all">
-                                                Postular a Misión 🚀
+                                                Quiero pasear a {request.dog.name} 🐾
                                             </Link>
                                         </div>
                                     ))}

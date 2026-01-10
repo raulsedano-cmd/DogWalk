@@ -67,20 +67,20 @@ const OwnerDashboard = () => {
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
                                 </span>
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Operaciones</span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Actividad</span>
                             </div>
                             <h1 className="text-5xl lg:text-6xl font-black text-navy-900 tracking-tighter leading-[0.8] italic">
                                 Hola, <span className="text-primary-600">{user?.firstName || 'Dueño'}</span>
                             </h1>
-                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em]">Gestión de Seguridad Canina</p>
+                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em]">Cuidando a tus mascotas</p>
                         </div>
 
                         <div className="flex gap-4 w-full lg:w-auto">
                             <Link to="/walk-requests/new" className="btn-primary flex-1 lg:flex-none">
-                                + Paseo Pro
+                                + Pedir Paseo
                             </Link>
                             <Link to="/dogs" className="btn-outline flex-1 lg:flex-none">
-                                🐕 Mascotas
+                                🐕 Mis Perros
                             </Link>
                         </div>
                     </div>
@@ -91,10 +91,10 @@ const OwnerDashboard = () => {
                 {/* Stats Grid - Compact */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                     {[
-                        { label: 'En Curso', val: assignedRequests.length, color: 'text-indigo-600', bg: 'bg-indigo-500/5' },
-                        { label: 'En Espera', val: openRequests.length, color: 'text-emerald-600', bg: 'bg-emerald-500/5' },
+                        { label: 'Paseando', val: assignedRequests.length, color: 'text-indigo-600', bg: 'bg-indigo-500/5' },
+                        { label: 'Esperando', val: openRequests.length, color: 'text-emerald-600', bg: 'bg-emerald-500/5' },
                         { label: 'Favoritos', val: favorites.length, color: 'text-primary-600', bg: 'bg-primary-500/5' },
-                        { label: 'Historial', val: completedRequests.length, color: 'text-navy-900', bg: 'bg-navy-900/5' }
+                        { label: 'Anteriores', val: completedRequests.length, color: 'text-navy-900', bg: 'bg-navy-900/5' }
                     ].map((s, i) => (
                         <div key={i} className="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100 hover:border-primary-100 transition-all flex items-center justify-between">
                             <div>
@@ -111,14 +111,14 @@ const OwnerDashboard = () => {
                     <section className="mb-20 animate-fadeIn">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-2 h-8 bg-primary-600 rounded-full"></div>
-                            <h2 className="text-2xl font-black text-navy-900 tracking-tight uppercase">Rastreo Activo</h2>
+                            <h2 className="text-2xl font-black text-navy-900 tracking-tight uppercase">Paseos en curso</h2>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {assignedRequests.map(request => (
                                 <Link key={request.id} to={`/walk-requests/${request.id}`} className="group card-premium !p-8 hover:border-primary-600/20 transition-all relative overflow-hidden flex flex-col justify-between">
                                     {request.status === 'IN_PROGRESS' && (
                                         <div className="absolute top-0 right-0 p-6">
-                                            <span className="bg-navy-900 text-white px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse border border-primary-600/10">🛰️ LIVE</span>
+                                            <span className="bg-navy-900 text-white px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse border border-primary-600/10">🛰️ EN VIVO</span>
                                         </div>
                                     )}
                                     <div className="space-y-6">
@@ -131,7 +131,7 @@ const OwnerDashboard = () => {
                                         </div>
                                         <div className="bg-slate-50/50 rounded-[18px] p-5 grid grid-cols-2 gap-4 border border-slate-100">
                                             <div className="space-y-0.5">
-                                                <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-400">Despliegue</p>
+                                                <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-400">Fecha</p>
                                                 <p className="text-navy-900 font-bold text-[11px]">{new Date(request.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</p>
                                             </div>
                                             <div className="space-y-0.5 border-l border-slate-200 pl-4">
@@ -141,7 +141,7 @@ const OwnerDashboard = () => {
                                         </div>
                                     </div>
                                     <div className="mt-8 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.3em] text-primary-600">
-                                        <span>Consola</span>
+                                        <span>Seguir paseo</span>
                                         <span className="w-8 h-8 rounded-[12px] bg-slate-50 flex items-center justify-center group-hover:bg-navy-900 group-hover:text-white transition-all text-slate-400 text-sm">→</span>
                                     </div>
                                 </Link>
@@ -154,7 +154,7 @@ const OwnerDashboard = () => {
                 <section className="mb-20">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-2 h-8 bg-emerald-500 rounded-full"></div>
-                        <h2 className="text-2xl font-black text-navy-900 uppercase">Mercado</h2>
+                        <h2 className="text-2xl font-black text-navy-900 uppercase">Mis Solicitudes</h2>
                     </div>
 
                     {openRequests.length === 0 ? (
