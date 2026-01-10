@@ -244,7 +244,7 @@ export const createWalkRequest = async (req, res) => {
         try {
             const availableWalkers = await prisma.user.findMany({
                 where: {
-                    roles: { has: 'WALKER' },
+                    activeRole: 'WALKER',
                     isAvailable: true,
                     baseZone: request.zone || undefined,  // Use zone instead of city
                 },

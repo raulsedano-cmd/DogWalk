@@ -33,7 +33,6 @@ export const getMessages = async (req, res) => {
                         id: true,
                         firstName: true,
                         lastName: true,
-                        roles: true,
                         activeRole: true
                     }
                 }
