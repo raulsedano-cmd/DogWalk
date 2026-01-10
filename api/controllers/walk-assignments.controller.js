@@ -617,6 +617,6 @@ export const getWalkerStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Error getting walker stats:', error);
-        res.status(500).json({ error: 'Error al obtener estadísticas' });
+        res.status(500).json({ error: 'Error al obtener estadísticas', details: error.message });
     }
 };

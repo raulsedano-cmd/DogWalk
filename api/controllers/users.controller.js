@@ -131,7 +131,7 @@ export const updateMyProfile = async (req, res) => {
         });
     } catch (error) {
         console.error('Update profile error:', error);
-        res.status(500).json({ error: 'Failed to update profile' });
+        res.status(500).json({ error: 'Failed to update profile', details: error.message });
     }
 };
 
@@ -233,6 +233,6 @@ export const toggleAvailability = async (req, res) => {
         res.json(user);
     } catch (error) {
         console.error('Toggle availability error:', error);
-        res.status(500).json({ error: 'Error al cambiar disponibilidad' });
+        res.status(500).json({ error: 'Error al cambiar disponibilidad', details: error.message });
     }
 };

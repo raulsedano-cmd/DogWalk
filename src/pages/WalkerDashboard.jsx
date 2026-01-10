@@ -31,7 +31,7 @@ const WalkerDashboard = () => {
             setStats(statsRes.data || { totalWalks: 0, rating: 5, earnings: 0 });
             setAvailableRequests(marketRes.data.requests || []);
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error loading data:', error.response?.data?.details || error.message);
         } finally {
             setLoading(false);
         }
@@ -52,7 +52,7 @@ const WalkerDashboard = () => {
                 loadData();
             }
         } catch (error) {
-            console.error('Error toggling availability');
+            console.error('Error toggling availability:', error.response?.data?.details || error.message);
         } finally {
             setAvailabilityLoading(false);
         }
