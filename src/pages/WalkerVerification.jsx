@@ -15,7 +15,7 @@ const WalkerVerification = () => {
     });
 
     useEffect(() => {
-        if (user.role !== 'WALKER') {
+        if (user.activeRole !== 'WALKER') {
             navigate('/');
         }
         checkStatus();

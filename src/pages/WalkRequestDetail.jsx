@@ -88,7 +88,7 @@ const WalkRequestDetail = () => {
 
     useEffect(() => {
         loadRequest();
-        if (user.role === 'OWNER') {
+        if (user.activeRole === 'OWNER') {
             loadSocialStatus();
         }
     }, [id]);
@@ -170,7 +170,7 @@ const WalkRequestDetail = () => {
         e.preventDefault();
         try {
             let receiverId;
-            if (user.role === 'OWNER') {
+            if (user.activeRole === 'OWNER') {
                 if (request.assignment) receiverId = request.assignment.walkerId;
                 else if (request.offers.length === 1) receiverId = request.offers[0].walkerId;
                 else {
@@ -225,8 +225,8 @@ const WalkRequestDetail = () => {
     if (loading) return <div className="container mx-auto px-4 py-8">Cargando...</div>;
     if (!request) return <div className="container mx-auto px-4 py-8">Solicitud no encontrada</div>;
 
-    const isOwner = user.role === 'OWNER' && request.ownerId === user.id;
-    const isWalker = user.role === 'WALKER';
+    const isOwner = user.activeRole === 'OWNER' && request.ownerId === user.id;
+    const isWalker = user.activeRole === 'WALKER';
     const canChat = (isOwner || (isWalker && (request.offers.some(o => o.walkerId === user.id) || request.assignment?.walkerId === user.id)));
 
     return (
@@ -568,7 +568,7 @@ const WalkRequestDetail = () => {
                                     )}
                                 </div>
                             </div>
-                            {user.role === 'WALKER' && (
+                            {user.activeRole === 'WALKER' && (
                                 <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
                                     <p className="text-[10px] font-black text-gray-400 uppercase">Comisión Plataforma (15%)</p>
                                     <p className="font-black text-red-500">- S/ {request.assignment.platformFeeAmount.toFixed(2)}</p>

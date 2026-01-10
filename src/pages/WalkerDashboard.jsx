@@ -186,7 +186,7 @@ const WalkerDashboard = () => {
             </div>
 
             {/* Legal Verification Alert */}
-            {user.role === 'WALKER' && user.verificationStatus !== 'VERIFIED' && (
+            {user.activeRole === 'WALKER' && user.verificationStatus !== 'VERIFIED' && (
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 rounded-r-xl shadow-sm animate-pulse-slow">
                     <div className="flex items-start gap-4">
                         <div className="text-3xl">🆔</div>
@@ -207,7 +207,7 @@ const WalkerDashboard = () => {
             )}
 
             {/* Config Validity Alert */}
-            {user.role === 'WALKER' && (!user.baseCity && !user.baseZone && !user.latitude) && (
+            {user.activeRole === 'WALKER' && (!user.baseCity && !user.baseZone && !user.latitude) && (
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
                     <div className="flex">
                         <div className="ml-3">
