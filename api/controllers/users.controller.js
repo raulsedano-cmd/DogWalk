@@ -13,7 +13,6 @@ export const getMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                roles: true,
                 activeRole: true,
                 city: true,
                 zone: true,
@@ -99,7 +98,6 @@ export const updateMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                roles: true,
                 activeRole: true,
                 city: true,
                 zone: true,
@@ -142,22 +140,10 @@ export const activateRole = async (req, res) => {
             return res.status(400).json({ error: 'Rol no válido' });
         }
 
-        const currentUser = await prisma.user.findUnique({
-            where: { id: req.user.userId }
-        });
-
-        if (currentUser.roles.includes(role)) {
-            return res.status(400).json({ error: 'El rol ya está activado' });
-        }
-
+        // With singular role column, activation is just updating the current role
         const updatedUser = await prisma.user.update({
             where: { id: req.user.userId },
-            data: {
-                roles: {
-                    push: role
-                },
-                activeRole: role
-            }
+            data: { activeRole: role }
         });
 
         res.json({ message: 'Rol activado correctamente', user: updatedUser });
@@ -174,14 +160,7 @@ export const switchRole = async (req, res) => {
             return res.status(400).json({ error: 'Rol no válido' });
         }
 
-        const currentUser = await prisma.user.findUnique({
-            where: { id: req.user.userId }
-        });
-
-        if (!currentUser.roles.includes(role)) {
-            return res.status(400).json({ error: 'No tienes este rol activado' });
-        }
-
+        // With singular role column, switching is just updating the column
         const updatedUser = await prisma.user.update({
             where: { id: req.user.userId },
             data: { activeRole: role }
@@ -204,7 +183,6 @@ export const getUserById = async (req, res) => {
                 id: true,
                 firstName: true,
                 lastName: true,
-                roles: true,
                 activeRole: true,
                 city: true,
                 zone: true,

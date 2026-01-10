@@ -10,7 +10,12 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (user) => {
     return jwt.sign(
-        { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
+        {
+            userId: user.id,
+            email: user.email,
+            roles: [user.activeRole], // Maintain array format for frontend compatibility
+            activeRole: user.activeRole
+        },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -31,7 +36,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             firstName: true,
             lastName: true,
             phone: true,
-            roles: true,
+            // roles: true, // Field does not exist in DB
             activeRole: true,
             termsAccepted: true,
             verificationStatus: true,
@@ -41,20 +46,15 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
     });
 
     if (user) {
-        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
-        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
-
-        if (preferredRole && (!hasRole || needsSwitch)) {
-            const updateData = {};
-            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
-            if (needsSwitch) updateData.activeRole = preferredRole;
-
+        // Since we only have one role column, switching role just updates that column.
+        // If preferredRole is different from current activeRole, we update it.
+        if (preferredRole && user.activeRole !== preferredRole) {
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: updateData,
+                data: { activeRole: preferredRole },
                 select: {
                     id: true, email: true, firstName: true, lastName: true, phone: true,
-                    roles: true, activeRole: true, termsAccepted: true, verificationStatus: true,
+                    activeRole: true, termsAccepted: true, verificationStatus: true,
                     city: true, zone: true
                 }
             });
@@ -71,7 +71,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             firstName: true,
             lastName: true,
             phone: true,
-            roles: true,
+            // roles: true,
             activeRole: true,
             termsAccepted: true,
             verificationStatus: true,
@@ -88,12 +88,8 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             emailVerified: true
         };
 
-        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
-        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
-
-        if (preferredRole && (!hasRole || needsSwitch)) {
-            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
-            if (needsSwitch) updateData.activeRole = preferredRole;
+        if (preferredRole && user.activeRole !== preferredRole) {
+            updateData.activeRole = preferredRole;
         }
 
         user = await prisma.user.update({
@@ -101,7 +97,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             data: updateData,
             select: {
                 id: true, email: true, firstName: true, lastName: true, phone: true,
-                roles: true, activeRole: true, termsAccepted: true, verificationStatus: true,
+                activeRole: true, termsAccepted: true, verificationStatus: true,
                 city: true, zone: true
             }
         });

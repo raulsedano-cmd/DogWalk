@@ -43,7 +43,7 @@ export const register = async (req, res) => {
                 firstName,
                 lastName,
                 phone,
-                roles: [role],
+                // roles: [role], // Field does not exist
                 activeRole: role,
                 city,
                 zone,
@@ -55,7 +55,6 @@ export const register = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                roles: true,
                 activeRole: true,
                 city: true,
                 zone: true,
@@ -68,7 +67,12 @@ export const register = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
+            {
+                userId: user.id,
+                email: user.email,
+                roles: [user.activeRole],
+                activeRole: user.activeRole
+            },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
@@ -103,7 +107,6 @@ export const login = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                roles: true,
                 activeRole: true,
                 termsAccepted: true,
                 verificationStatus: true,
@@ -124,17 +127,12 @@ export const login = async (req, res) => {
         }
 
         // Handle preferredRole sync before token generation
-        const hasRole = preferredRole ? user.roles.includes(preferredRole) : true;
         const needsSwitch = preferredRole && user.activeRole !== preferredRole;
 
-        if (preferredRole && (!hasRole || needsSwitch)) {
-            const updateData = {};
-            if (!hasRole) updateData.roles = [...user.roles, preferredRole];
-            if (needsSwitch) updateData.activeRole = preferredRole;
-
+        if (preferredRole && needsSwitch) {
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: updateData,
+                data: { activeRole: preferredRole },
                 select: {
                     id: true,
                     email: true,
@@ -142,7 +140,6 @@ export const login = async (req, res) => {
                     firstName: true,
                     lastName: true,
                     phone: true,
-                    roles: true,
                     activeRole: true,
                     termsAccepted: true,
                     verificationStatus: true,
@@ -154,7 +151,12 @@ export const login = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user.id, email: user.email, roles: user.roles, activeRole: user.activeRole },
+            {
+                userId: user.id,
+                email: user.email,
+                roles: [user.activeRole],
+                activeRole: user.activeRole
+            },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );

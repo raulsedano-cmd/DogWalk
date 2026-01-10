@@ -1,0 +1,36 @@
+acceptsLarge: boolean
+acceptsMedium: boolean
+acceptsSmall: boolean
+addressReference: text
+addressType: text
+authProvider: USER-DEFINED
+averageRating: double precision
+baseCity: text
+baseZone: text
+bio: text
+city: text
+createdAt: timestamp without time zone
+dniBackPhotoUrl: text
+dniFrontPhotoUrl: text
+dniNumber: text
+email: text
+emailVerified: boolean
+experienceText: text
+firstName: text
+id: text
+isAvailable: boolean
+isVerifiedWalker: boolean
+lastName: text
+latitude: double precision
+longitude: double precision
+maxDogsAtOnce: integer
+password: text
+phone: text
+profilePhotoUrl: text
+providerUserId: text
+role: USER-DEFINED
+serviceRadiusKm: integer
+termsAccepted: boolean
+updatedAt: timestamp without time zone
+verificationStatus: USER-DEFINED
+zone: text
