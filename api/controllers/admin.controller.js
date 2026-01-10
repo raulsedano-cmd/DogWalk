@@ -107,6 +107,8 @@ export const getVerificationHistory = async (req, res) => {
                 dniNumber: true,
                 verificationStatus: true,
                 isVerifiedWalker: true,
+                dniFrontPhotoUrl: true,
+                dniBackPhotoUrl: true,
                 updatedAt: true
             },
             orderBy: { updatedAt: 'desc' },
@@ -134,6 +136,7 @@ export const getAllWalkers = async (req, res) => {
                 averageRating: true,
                 isVerifiedWalker: true,
                 verificationStatus: true,
+                profilePhotoUrl: true,
                 createdAt: true
             },
             orderBy: { createdAt: 'desc' }

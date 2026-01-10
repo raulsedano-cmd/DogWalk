@@ -160,6 +160,7 @@ const AdminDashboard = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fotos</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                         </tr>
                                     </thead>
@@ -173,6 +174,20 @@ const AdminDashboard = () => {
                                                         }`}>
                                                         {h.verificationStatus}
                                                     </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex space-x-2">
+                                                        {h.dniFrontPhotoUrl && (
+                                                            <button onClick={() => openImage(h.dniFrontPhotoUrl)} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition-colors">
+                                                                Frente
+                                                            </button>
+                                                        )}
+                                                        {h.dniBackPhotoUrl && (
+                                                            <button onClick={() => openImage(h.dniBackPhotoUrl)} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition-colors">
+                                                                Dorso
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {new Date(h.updatedAt).toLocaleDateString()}
@@ -203,9 +218,20 @@ const AdminDashboard = () => {
                                     {walkers.map(w => (
                                         <tr key={w.id}>
                                             <td className="px-6 py-4">
-                                                <div className="font-medium text-gray-900">{w.firstName} {w.lastName}</div>
-                                                <div className="text-sm text-gray-500">
-                                                    {w.isVerifiedWalker ? '✅ Verificado' : '❌ No Verificado'}
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10 mr-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => w.profilePhotoUrl && openImage(w.profilePhotoUrl)}>
+                                                        {w.profilePhotoUrl ? (
+                                                            <img className="h-10 w-10 rounded-full object-cover border" src={getImageUrl(w.profilePhotoUrl)} alt="" />
+                                                        ) : (
+                                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-lg">👤</div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">{w.firstName} {w.lastName}</div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {w.isVerifiedWalker ? '✅ Verificado' : '❌ No Verificado'}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
@@ -288,8 +314,8 @@ const TabButton = ({ active, onClick, label, count }) => (
     <button
         onClick={onClick}
         className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors relative ${active
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+            ? 'border-primary-600 text-primary-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
     >
         {label}
