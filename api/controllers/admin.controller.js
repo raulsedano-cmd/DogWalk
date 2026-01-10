@@ -46,18 +46,43 @@ export const approveWalker = async (req, res) => {
     }
 };
 
+import { createNotification } from './notifications.controller.js';
+
+// ... (existing code for getPendingVerifications and approveWalker)
+
 // Reject a walker
 export const rejectWalker = async (req, res) => {
     try {
         const { userId } = req.params;
-        await prisma.user.update({
+        const { reason } = req.body; // Expect reason in body
+
+        if (!reason) {
+            return res.status(400).json({ error: 'Debes indicar un motivo de rechazo' });
+        }
+
+        const user = await prisma.user.update({
             where: { id: userId },
             data: {
                 verificationStatus: 'REJECTED',
                 isVerifiedWalker: false
             }
         });
-        res.json({ message: 'Walker verification rejected' });
+
+        // Send notification to the walker
+        // Using WALK_CANCELLED as proxy for "Rejection" (X icon) since we can't easily add enum values in prod
+        try {
+            await createNotification({
+                userId: userId,
+                type: 'WALK_CANCELLED',
+                title: 'Verificación Rechazada ❌',
+                message: `Tu solicitud ha sido rechazada. Motivo: ${reason}. Por favor, vuelve a intentar subiendo documentos válidos.`,
+                link: '/verificar-paseador' // Link to retry
+            });
+        } catch (nError) {
+            console.error('Failed to send rejection notification', nError);
+        }
+
+        res.json({ message: 'Walker verification rejected and notified' });
     } catch (error) {
         console.error('Admin reject error:', error);
         res.status(500).json({ error: 'Failed to reject walker' });

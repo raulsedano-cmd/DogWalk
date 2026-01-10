@@ -33,13 +33,21 @@ const AdminDashboard = () => {
     };
 
     const handleReject = async (userId) => {
-        if (!confirm('¿Rechazar solicitud?')) return;
+        const reason = window.prompt('Indica el motivo del rechazo (se le enviará una notificación al paseador):');
+        if (reason === null) return; // Cancelado por usuario
+        if (!reason.trim()) {
+            return alert('Debes indicar un motivo para rechazar.');
+        }
+
+        if (!confirm('¿Seguro que deseas rechazar esta solicitud?')) return;
+
         try {
-            await api.put(`/admin/reject/${userId}`);
-            alert('Solicitud rechazada');
+            await api.put(`/admin/reject/${userId}`, { reason });
+            alert('Solicitud rechazada y usuario notificado.');
             loadVerifications();
         } catch (error) {
-            alert('Error al rechazar');
+            console.error(error);
+            alert('Error al rechazar solicitud.');
         }
     };
 

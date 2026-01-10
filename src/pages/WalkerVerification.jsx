@@ -96,6 +96,13 @@ const WalkerVerification = () => {
                 </div>
 
                 <div className="p-8">
+                    {user.verificationStatus === 'REJECTED' && (
+                        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-8 text-center text-red-800 space-y-2 animate-pulse">
+                            <h2 className="font-bold text-xl">Solicitud Rechazada ⚠️</h2>
+                            <p className="text-sm">Hubo un problema con tu verificación anterior. Por favor, revisa que las fotos sean claras y legibles, y vuelve a enviarlas.</p>
+                        </div>
+                    )}
+
                     {user.verificationStatus === 'PENDING' && fetchedStatus?.dniNumber ? (
                         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center text-yellow-800 space-y-3">
                             <h2 className="font-bold text-xl">Revisión en Proceso</h2>
