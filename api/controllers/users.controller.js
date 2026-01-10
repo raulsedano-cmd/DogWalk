@@ -73,7 +73,9 @@ export const updateMyProfile = async (req, res) => {
         if (addressReference !== undefined) updateData.addressReference = addressReference;
 
         if (req.file) {
-            updateData.profilePhotoUrl = `/uploads/profiles/${req.file.filename}`;
+            // Support Cloudinary (path is URL) or Disk (construct relative path)
+            const isUrl = req.file.path && req.file.path.startsWith('http');
+            updateData.profilePhotoUrl = isUrl ? req.file.path : `/uploads/profiles/${req.file.filename}`;
         } else if (profilePhotoUrl !== undefined) {
             updateData.profilePhotoUrl = profilePhotoUrl;
         }

@@ -315,7 +315,9 @@ export const uploadWalkPhotos = async (req, res) => {
         const photoData = req.files.map(file => ({
             walkAssignmentId: id,
             uploaderId: userId,
-            url: `/uploads/walk-photos/${file.filename}`
+            url: (file.path && file.path.startsWith('http'))
+                ? file.path
+                : `/uploads/walk-photos/${file.filename}`
         }));
 
         await prisma.walkPhoto.createMany({

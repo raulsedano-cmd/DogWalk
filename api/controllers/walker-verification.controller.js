@@ -19,8 +19,14 @@ export const submitVerification = async (req, res) => {
             return res.status(400).json({ error: 'Debes subir ambas fotos del DNI (adelante y atrás)' });
         }
 
-        const dniFrontPhotoUrl = `/uploads/verification/${req.files['dniFront'][0].filename}`;
-        const dniBackPhotoUrl = `/uploads/verification/${req.files['dniBack'][0].filename}`;
+        const getFileUrl = (file) => {
+            return (file.path && file.path.startsWith('http'))
+                ? file.path
+                : `/uploads/verification/${file.filename}`;
+        };
+
+        const dniFrontPhotoUrl = getFileUrl(req.files['dniFront'][0]);
+        const dniBackPhotoUrl = getFileUrl(req.files['dniBack'][0]);
 
         const updatedUser = await prisma.user.update({
             where: { id: userId },

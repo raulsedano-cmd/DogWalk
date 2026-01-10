@@ -135,7 +135,9 @@ export const uploadDogPhoto = async (req, res) => {
 
         // If using Cloudinary, req.file.path contains the full URL
         // If using local storage, construct the path manually
-        const photoUrl = req.file.path || `/uploads/dog-photos/${req.file.filename}`;
+        const photoUrl = (req.file.path && req.file.path.startsWith('http'))
+            ? req.file.path
+            : `/uploads/dog-photos/${req.file.filename}`;
         console.log(`[DEBUG] Foto guardada en: ${photoUrl}`);
 
         const updatedDog = await prisma.dog.update({
