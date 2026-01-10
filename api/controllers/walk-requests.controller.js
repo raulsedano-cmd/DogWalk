@@ -3,7 +3,7 @@ import { createNotification } from './notifications.controller.js';
 
 const prisma = new PrismaClient();
 
-export const getWalkRequests = async (req, res) => {
+export const getWalkRequests = async (req, res, next) => {
     try {
         const { page = 1, limit = 10, city, zone, size, status } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -117,8 +117,7 @@ export const getWalkRequests = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('Get walk requests error:', error);
-        res.status(500).json({ error: 'Failed to get walk requests' });
+        next(error);
     }
 };
 

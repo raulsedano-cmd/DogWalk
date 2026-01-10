@@ -3,7 +3,7 @@ import { createNotification } from './notifications.controller.js';
 
 const prisma = new PrismaClient();
 
-export const getMyAssignments = async (req, res) => {
+export const getMyAssignments = async (req, res, next) => {
     try {
         const where = {};
 
@@ -47,8 +47,7 @@ export const getMyAssignments = async (req, res) => {
 
         res.json(assignments);
     } catch (error) {
-        console.error('Get assignments error:', error);
-        res.status(500).json({ error: 'Failed to get assignments' });
+        next(error);
     }
 };
 
