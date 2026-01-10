@@ -17,6 +17,7 @@ import supportRoutes from './routes/support.routes.js';
 import walkerRoutes from './routes/walker.routes.js';
 import savedAddressesRoutes from './routes/saved-addresses.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import { debugDatabase } from './controllers/debug.controller.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,7 +53,6 @@ app.get('/health', (req, res) => {
 });
 
 // Temporary debug route
-import { debugDatabase } from './controllers/debug.controller.js';
 app.get('/api/debug-db', debugDatabase);
 
 // Routes
