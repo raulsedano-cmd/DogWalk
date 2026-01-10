@@ -11,9 +11,14 @@ export const getWalkRequests = async (req, res) => {
 
         const where = {};
 
-        // For walkers: show only OPEN requests
+        // For walkers: show only OPEN requests that are in the future or today
         if (req.user.activeRole === 'WALKER') {
             where.status = 'OPEN';
+
+            // Filter out past requests
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            where.date = { gte: startOfToday };
 
             const walker = await prisma.user.findUnique({
                 where: { id: req.user.userId },
@@ -120,7 +125,6 @@ export const getWalkRequests = async (req, res) => {
 export const getWalkRequestById = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('Fetching walk request:', id);
 
         const request = await prisma.walkRequest.findUnique({
             where: { id },
@@ -171,23 +175,13 @@ export const getWalkRequestById = async (req, res) => {
         });
 
         if (!request) {
-            console.log('Walk request not found:', id);
             return res.status(404).json({ error: 'Walk request not found' });
         }
 
-        console.log('Walk request loaded successfully:', id);
         res.json(request);
     } catch (error) {
         console.error('Get walk request error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            code: error.code,
-            meta: error.meta
-        });
-        res.status(500).json({
-            error: 'Failed to get walk request',
-            details: process.env.NODE_ENV === 'production' ? undefined : error.message
-        });
+        res.status(500).json({ error: 'Failed to get walk request' });
     }
 };
 
