@@ -591,3 +591,32 @@ export const settlePlatformFees = async (req, res) => {
         res.status(500).json({ error: 'Error al liquidar comisiones' });
     }
 };
+
+export const getWalkerStats = async (req, res) => {
+    try {
+        const walkerId = req.user.userId;
+
+        const [totalWalks, earnings, user] = await Promise.all([
+            prisma.walkAssignment.count({
+                where: { walkerId, status: 'COMPLETED' }
+            }),
+            prisma.walkAssignment.aggregate({
+                where: { walkerId, status: 'COMPLETED' },
+                _sum: { totalAmount: true }
+            }),
+            prisma.user.findUnique({
+                where: { id: walkerId },
+                select: { averageRating: true }
+            })
+        ]);
+
+        res.json({
+            totalWalks,
+            rating: user?.averageRating || 5.0,
+            earnings: earnings._sum.totalAmount || 0
+        });
+    } catch (error) {
+        console.error('Error getting walker stats:', error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+};

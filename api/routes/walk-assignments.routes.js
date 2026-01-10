@@ -9,6 +9,7 @@ import {
     getWalkPhotos,
     markPaid,
     markArrived,
+    getWalkerStats,
     checkWalkReminders
 } from '../controllers/walk-assignments.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
@@ -17,6 +18,8 @@ import { walkPhotosUpload } from '../middleware/upload.middleware.js';
 const router = express.Router();
 
 router.get('/', authenticate, getMyAssignments);
+router.get('/my-missions', authenticate, getMyAssignments);
+router.get('/stats', authenticate, getWalkerStats);
 router.get('/:id', authenticate, getAssignmentById);
 
 // Walk Lifecycle
