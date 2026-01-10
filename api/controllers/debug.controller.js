@@ -22,6 +22,14 @@ export const debugDatabase = async (req, res) => {
             ORDER BY column_name
         `);
 
+        // 3. Check WalkAssignment table columns
+        const walkAssignmentColumns = await prisma.$queryRawUnsafe(`
+            SELECT column_name, data_type, table_schema
+            FROM information_schema.columns 
+            WHERE table_name = 'WalkAssignment'
+            ORDER BY column_name
+        `);
+
         // 3. Get a sample user (sanitized)
         const sampleUser = await prisma.$queryRawUnsafe(`
             SELECT * FROM "User" LIMIT 1
@@ -46,6 +54,7 @@ export const debugDatabase = async (req, res) => {
             environment: dbInfo,
             userTableColumns: userColumns,
             walkRequestTableColumns: walkRequestColumns,
+            walkAssignmentTableColumns: walkAssignmentColumns,
             sampleUserAnalysis: sanitizedUser,
             roleColumnExists: userColumns.some(c => c.column_name === 'role'),
             activeRoleColumnExists: userColumns.some(c => c.column_name === 'activeRole')
