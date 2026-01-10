@@ -47,6 +47,11 @@ export default {
             borderRadius: {
                 '4xl': '32px',
                 '5xl': '40px',
+            },
+            boxShadow: {
+                'premium-primary': '0 10px 25px rgba(255, 107, 0, 0.12)',
+                'premium-navy': '0 10px 25px rgba(15, 23, 42, 0.12)',
+                'premium-card': '0 8px 30px rgba(0, 0, 0, 0.02)',
             }
         },
     },

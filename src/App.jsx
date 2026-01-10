@@ -23,6 +23,7 @@ import WalkerVerification from './pages/WalkerVerification';
 import Help from './pages/Help';
 import Payments from './pages/Payments';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'react-hot-toast';
 
 import RoleSelection from './pages/RoleSelection';
 import SavedAddresses from './pages/SavedAddresses';
@@ -85,6 +86,7 @@ function App() {
         <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
             <ErrorBoundary>
                 <AuthProvider>
+                    <Toaster position="top-right" reverseOrder={false} />
                     <BrowserRouter>
                         <ThemedContent>
                             <div className="min-h-screen flex flex-col">

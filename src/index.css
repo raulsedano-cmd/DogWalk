@@ -23,11 +23,11 @@
 
   /* Refined Utility Buttons - Scaled Down */
   .btn-primary {
-    @apply px-6 py-3.5 bg-primary-600 text-white rounded-[16px] font-black hover:bg-black shadow-[0_10px_25px_rgba(255, 107, 0, 0.12)] transition-all active:scale-95 flex items-center justify-center gap-2.5 text-sm;
+    @apply px-6 py-3.5 bg-primary-600 text-white rounded-[16px] font-black hover:bg-black shadow-premium-primary transition-all active:scale-95 flex items-center justify-center gap-2.5 text-sm;
   }
 
   .btn-navy {
-    @apply px-6 py-3.5 bg-navy-900 text-white rounded-[16px] font-black hover:bg-black shadow-[0_10px_25px_rgba(15, 23, 42, 0.12)] transition-all active:scale-95 flex items-center justify-center gap-2.5 text-sm;
+    @apply px-6 py-3.5 bg-navy-900 text-white rounded-[16px] font-black hover:bg-black shadow-premium-navy transition-all active:scale-95 flex items-center justify-center gap-2.5 text-sm;
   }
 
   .btn-outline {
@@ -39,7 +39,7 @@
   }
 
   .card-premium {
-    @apply bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgba(0, 0, 0, 0.02)] border border-slate-100;
+    @apply bg-white rounded-[32px] p-8 shadow-premium-card border border-slate-100;
   }
 }
 

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../services/notificationService';
+import { supabase } from '../services/supabaseClient';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const NotificationDropdown = () => {
     const [notifications, setNotifications] = useState([]);
@@ -8,9 +11,16 @@ const NotificationDropdown = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    // LOG DE INICIO - ESTO DEBE APARECER SIEMPRE
+    useEffect(() => {
+        console.log("🛠️ Componente NotificationDropdown renderizado");
+        console.log("👤 Usuario actual:", user ? user.id : "NO LOGUEADO");
+    }, [user]);
 
     const parseNotification = (n) => {
-        if (!n.message) return { ...n, link: null };
+        if (!n || !n.message) return { ...n, link: null };
         const parts = n.message.split('|LINK:');
         return {
             ...n,
@@ -21,21 +31,54 @@ const NotificationDropdown = () => {
 
     const fetchNotifications = async () => {
         try {
+            console.log("📡 Cargando notificaciones iniciales via API...");
             const data = await notificationService.getNotifications();
             const parsedData = data.map(parseNotification);
             setNotifications(parsedData);
             setUnreadCount(parsedData.filter(n => !n.isRead).length);
         } catch (error) {
-            console.error('Error fetching notifications:', error);
+            console.error('❌ Error API:', error);
         }
     };
 
     useEffect(() => {
+        if (!user?.id) return;
+
         fetchNotifications();
-        // Poll every 60 seconds (simple in-app replacement for WebSockets as requested)
-        const interval = setInterval(fetchNotifications, 60000);
-        return () => clearInterval(interval);
-    }, []);
+
+        console.log('🔥 Intentando conectar a Supabase Realtime para:', user.id);
+
+        const channel = supabase
+            .channel(`notifs-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'Notification',
+                    filter: `userId=eq.${user.id}`
+                },
+                (payload) => {
+                    console.log('🚀 ¡ACTUALIZACIÓN REALTIME!', payload);
+                    const newNotif = parseNotification(payload.new);
+                    setNotifications(prev => [newNotif, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                    toast.success(newNotif.title || "Nueva notificación", {
+                        icon: '🔔',
+                        duration: 5000
+                    });
+                }
+            )
+            .subscribe((status, err) => {
+                console.log('🌐 ESTADO CONEXIÓN SUPABASE:', status);
+                if (err) console.error('🚨 Error Suscripción:', err);
+            });
+
+        return () => {
+            console.log('🔌 Cerrando canal Realtime');
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -48,11 +91,7 @@ const NotificationDropdown = () => {
     }, []);
 
     const handleNotificationClick = async (notif) => {
-        // If link exists, navigate.
-        if (notif.link) {
-            navigate(notif.link);
-        }
-
+        if (notif.link) navigate(notif.link);
         if (!notif.isRead) {
             try {
                 await notificationService.markAsRead(notif.id);
@@ -65,16 +104,6 @@ const NotificationDropdown = () => {
         setIsOpen(false);
     };
 
-    const handleMarkAllAsRead = async () => {
-        try {
-            await notificationService.markAllAsRead();
-            setUnreadCount(0);
-            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        } catch (error) {
-            console.error('Error marking all as read:', error);
-        }
-    };
-
     const getTypeIcon = (type) => {
         switch (type) {
             case 'WALK_REQUEST_CREATED': return '🐕';
@@ -84,7 +113,6 @@ const NotificationDropdown = () => {
             case 'WALK_CANCELLED': return '❌';
             case 'WALK_STARTED': return '🚀';
             case 'WALK_COMPLETED': return '🏆';
-            case 'REVIEW_RECEIVED': return '⭐';
             default: return '🔔';
         }
     };
@@ -93,68 +121,48 @@ const NotificationDropdown = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors focus:outline-none"
+                className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white">
                         {unreadCount}
                     </span>
                 )}
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                    <div className="p-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
                         <h3 className="font-bold text-gray-800">Notificaciones</h3>
-                        {unreadCount > 0 && (
-                            <button
-                                onClick={handleMarkAllAsRead}
-                                className="text-xs text-primary-600 hover:text-primary-800 font-semibold"
-                            >
-                                Marcar todas como leídas
-                            </button>
-                        )}
+                        {unreadCount > 0 && <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-bold">NUEVAS</span>}
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500">
-                                <p className="text-sm">No tienes notificaciones</p>
+                            <div className="p-10 text-center">
+                                <span className="text-4xl block mb-2">📭</span>
+                                <p className="text-gray-400 text-sm">No tienes notificaciones</p>
                             </div>
                         ) : (
                             notifications.map((notif) => (
                                 <div
                                     key={notif.id}
                                     onClick={() => handleNotificationClick(notif)}
-                                    className={`p-4 border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50 flex space-x-3 ${!notif.isRead ? 'bg-primary-50/30' : ''}`}
+                                    className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 flex space-x-3 ${!notif.isRead ? 'bg-primary-50/20' : ''}`}
                                 >
-                                    <div className="flex-shrink-0 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 text-lg">
-                                        {getTypeIcon(notif.type)}
-                                    </div>
+                                    <div className="text-2xl">{getTypeIcon(notif.type)}</div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-semibold text-gray-900 ${!notif.isRead ? 'pr-4' : ''}`}>
-                                            {notif.title}
-                                            {!notif.isRead && (
-                                                <span className="absolute top-4 right-4 w-2 h-2 bg-primary-500 rounded-full"></span>
-                                            )}
-                                        </p>
-                                        <p className="text-xs text-gray-600 truncate mt-0.5">{notif.message}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1">
-                                            {new Date(notif.createdAt).toLocaleString()}
-                                        </p>
+                                        <p className="text-sm font-bold text-gray-900 leading-tight">{notif.title}</p>
+                                        <p className="text-xs text-gray-600 truncate mt-1">{notif.message}</p>
+                                        <p className="text-[9px] text-gray-400 mt-1 uppercase font-bold tracking-wider">{new Date(notif.createdAt).toLocaleTimeString()}</p>
                                     </div>
+                                    {!notif.isRead && <div className="w-2 h-2 bg-primary-500 rounded-full mt-2"></div>}
                                 </div>
                             ))
                         )}
-                    </div>
-
-                    <div className="p-3 text-center border-t border-gray-50 bg-gray-50/30">
-                        <button className="text-xs text-gray-500 font-medium hover:text-gray-700">
-                            Ver todo el historial
-                        </button>
                     </div>
                 </div>
             )}
