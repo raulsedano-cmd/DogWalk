@@ -30,6 +30,10 @@ const WalkerDashboard = () => {
         reportNotes: ''
     });
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (window.innerWidth <= 800) ||
+        ('ontouchstart' in window);
+
     useEffect(() => {
         loadData();
     }, [page, filters]);
@@ -185,6 +189,7 @@ const WalkerDashboard = () => {
                         <p className={`font-bold ${user.isAvailable ? 'text-green-600' : 'text-red-500 flex items-center gap-1'}`}>
                             {user.isAvailable ? '● DISPONIBLE' : '○ NO DISPONIBLE'}
                         </p>
+                        <p className="text-[9px] text-gray-400 font-medium">Permanecerá así hasta que lo cambies.</p>
                     </div>
                     <button
                         onClick={toggleAvailability}
@@ -388,32 +393,42 @@ const WalkerDashboard = () => {
 
                                 {assignment.status === 'PENDING' ? (
                                     !assignment.walkerArrivedAt ? (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleArrived(assignment.id); }}
-                                            className="btn-primary w-full mt-2 bg-blue-600 hover:bg-blue-700 flex justify-center items-center gap-2"
-                                        >
-                                            📍 Ya llegué
-                                        </button>
+                                        <div className="space-y-2 mt-2">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleArrived(assignment.id); }}
+                                                disabled={!isMobile}
+                                                className={`w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all ${isMobile ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                                            >
+                                                📍 Ya llegué
+                                            </button>
+                                            {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center">Inicia sesión desde tu celular para marcar llegada</p>}
+                                        </div>
                                     ) : (
                                         <div className="space-y-2 mt-2">
-                                            <div className="p-2 bg-blue-50 text-blue-800 text-xs rounded text-center animate-pulse">
-                                                ✅ Notificado. Esperando al dueño...
+                                            <div className="p-2 bg-blue-50 text-blue-800 text-[10px] font-black rounded-lg text-center animate-pulse tracking-tight">
+                                                ✅ LLEGADA NOTIFICADA. ESPERANDO...
                                             </div>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleUpdateAssignment(assignment.id, 'IN_PROGRESS'); }}
-                                                className="btn-primary w-full bg-green-600 hover:bg-green-700 flex justify-center items-center gap-2"
+                                                disabled={!isMobile}
+                                                className={`w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all ${isMobile ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                                             >
-                                                🐕 Ya recogí al perro
+                                                🐕 Recoger Perro
                                             </button>
+                                            {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center">Debes estar en tu móvil para recoger al perro</p>}
                                         </div>
                                     )
                                 ) : (
-                                    <button
-                                        onClick={() => navigate(`/walk-assignments/${assignment.id}/in-progress`)}
-                                        className="btn-primary w-full mt-2 bg-indigo-600 hover:bg-indigo-700"
-                                    >
-                                        📱 Gestionar Paseo
-                                    </button>
+                                    <div className="space-y-2 mt-2">
+                                        <button
+                                            onClick={() => navigate(`/walk-assignments/${assignment.id}/in-progress`)}
+                                            disabled={!isMobile}
+                                            className={`w-full py-4 rounded-2xl font-black flex justify-center items-center gap-2 shadow-xl transition-all ${isMobile ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                                        >
+                                            📱 SEGUIMIENTO EN VIVO
+                                        </button>
+                                        {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center uppercase tracking-widest">Uso exclusivo en celular</p>}
+                                    </div>
                                 )}
                             </div>
                         ))}

@@ -279,37 +279,38 @@ const WalkInProgress = () => {
     // BLOCK DESKTOP USAGE (Instant check)
     if (!isMobile) {
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center font-sans">
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center font-sans tracking-tight">
                 <div className="max-w-md bg-white rounded-[32px] p-10 shadow-2xl space-y-8">
                     <div className="relative inline-block">
-                        <div className="text-7xl animate-bounce">📱</div>
-                        <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold border-4 border-white">✕</div>
+                        <div className="text-7xl">📱</div>
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg">✕</div>
                     </div>
                     <div className="space-y-3">
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">SOLO MÓVIL</h2>
+                        <h2 className="text-3xl font-black text-gray-900">ACCESO MÓVIL</h2>
                         <p className="text-gray-500 font-medium leading-relaxed">
-                            Esta sección es una herramienta de precisión. Para garantizar el rastreo en tiempo real y la seguridad del perro, debes usar la **App de DogWalk** o el navegador de tu celular.
+                            Para garantizar un rastreo preciso y la seguridad total de la mascota,
+                            esta sección solo está disponible desde tu <strong>dispositivo móvil</strong>.
                         </p>
                     </div>
-                    <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex items-center gap-4 text-left">
-                        <div className="bg-blue-500 text-white rounded-full p-2 text-xl">🛰️</div>
-                        <p className="text-sm text-blue-800 font-semibold leading-tight">
-                            "Como Uber, necesitamos sensores de movimiento y satélites reales."
+                    <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex items-center gap-4 text-left">
+                        <div className="bg-blue-600 text-white rounded-xl p-3 text-xl shadow-md">🛰️</div>
+                        <p className="text-sm text-blue-900 font-bold leading-tight">
+                            Necesitamos sensores de movimiento y señal satelital real para certificar el paseo.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate('/walker/dashboard')}
-                        className="w-full bg-gray-900 hover:bg-black text-white py-5 rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg"
+                        className="w-full bg-gray-900 hover:bg-black text-white py-5 rounded-2xl font-black text-lg transition-all active:scale-95 shadow-xl"
                     >
                         Volver al Panel
                     </button>
-                    <p className="text-xs text-gray-400">Si estás en un celular y ves esto, prueba girando la pantalla.</p>
+                    <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Seguridad Certificada DogWalk</p>
                 </div>
             </div>
         );
     }
 
-    if (loading && !assignment) return <div className="text-center py-20">Cargando paseo...</div>;
+    if (loading && !assignment) return <div className="text-center py-20 font-bold text-gray-500 animate-pulse">Cargando paseo...</div>;
 
     const isEarly = Math.floor(elapsedTime / 60) < (assignment?.walkRequest?.durationMinutes || 0);
 
