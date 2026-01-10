@@ -1,6 +1,9 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { getPendingVerifications, approveWalker, rejectWalker } from '../controllers/admin.controller.js';
+import {
+    getPendingVerifications, approveWalker, rejectWalker,
+    getVerificationHistory, getAllWalkers, getSupportTickets, updateTicketStatus
+} from '../controllers/admin.controller.js';
 
 const router = express.Router();
 
@@ -9,5 +12,11 @@ const router = express.Router();
 router.get('/verifications', authenticate, getPendingVerifications);
 router.put('/verify/:userId', authenticate, approveWalker);
 router.put('/reject/:userId', authenticate, rejectWalker);
+
+// New Routes for Enhanced Dashboard
+router.get('/history', authenticate, getVerificationHistory);
+router.get('/walkers', authenticate, getAllWalkers);
+router.get('/tickets', authenticate, getSupportTickets);
+router.put('/tickets/:id', authenticate, updateTicketStatus);
 
 export default router;
