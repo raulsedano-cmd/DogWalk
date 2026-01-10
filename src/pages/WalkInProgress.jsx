@@ -76,21 +76,28 @@ const WalkInProgress = () => {
             }
         };
 
-        if (assignment && assignment.status === 'IN_PROGRESS') {
-            if ('geolocation' in navigator) {
-                watchId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        const { latitude, longitude } = pos.coords;
-                        const newPoint = { lat: latitude, lng: longitude };
-                        setCurrentPos(newPoint);
-                        setLocalRoute(prev => [...prev.slice(-50), newPoint]); // Keep last 50 points locally
-                        sendLocation(latitude, longitude);
-                    },
-                    (err) => console.warn("GPS Warn", err),
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-                );
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const { latitude, longitude, accuracy } = pos.coords;
+
+                // Solo aceptar posiciones con precisión menor a 100 metros para evitar saltos locos
+                if (accuracy > 100) return;
+
+                const newPoint = { lat: latitude, lng: longitude };
+                setCurrentPos(newPoint);
+                setLocalRoute(prev => [...prev.slice(-50), newPoint]);
+                sendLocation(latitude, longitude);
+            },
+            (err) => {
+                if (err.code === 1) alert("⚠️ Error: Permiso de GPS denegado. Actívalo para que el dueño pueda seguirte.");
+                console.warn("GPS Warn", err);
+            },
+            {
+                enableHighAccuracy: true, // Forzar GPS satelital
+                timeout: 10000,
+                maximumAge: 0
             }
-        }
+        );
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
         };
@@ -247,6 +254,11 @@ const WalkInProgress = () => {
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
                         RASTREO EN VIVO
                     </div>
+                    {currentPos && (
+                        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl text-[9px] font-mono text-white/80">
+                            {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
+                        </div>
+                    )}
                 </div>
 
                 {/* Dog Info & Instructions */}
