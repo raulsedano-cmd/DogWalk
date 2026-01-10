@@ -602,7 +602,7 @@ export const getWalkerStats = async (req, res) => {
             }),
             prisma.walkAssignment.aggregate({
                 where: { walkerId, status: 'COMPLETED' },
-                _sum: { totalAmount: true }
+                _sum: { agreedPrice: true }
             }),
             prisma.user.findUnique({
                 where: { id: walkerId },
@@ -613,7 +613,7 @@ export const getWalkerStats = async (req, res) => {
         res.json({
             totalWalks,
             rating: user?.averageRating || 5.0,
-            earnings: earnings._sum.totalAmount || 0
+            earnings: earnings._sum.agreedPrice || 0
         });
     } catch (error) {
         console.error('Error getting walker stats:', error);
