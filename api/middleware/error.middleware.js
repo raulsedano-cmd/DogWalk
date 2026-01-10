@@ -25,7 +25,8 @@ export const errorHandler = (err, req, res, next) => {
     console.error('SERVER ERROR:', err.stack || err);
     res.status(err.status || 500).json({
         error: err.message || 'Internal server error',
-        debug: process.env.NODE_ENV === 'development' || !process.env.VERCEL ? err : undefined,
-        details: err.stack ? 'Check server logs' : undefined
+        code: err.code,
+        details: err.stack,
+        hint: 'Check DATABASE_URL in environment variables'
     });
 };
