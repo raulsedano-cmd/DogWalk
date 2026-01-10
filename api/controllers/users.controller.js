@@ -13,7 +13,7 @@ export const getMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,
@@ -98,7 +98,7 @@ export const updateMyProfile = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,
@@ -143,7 +143,7 @@ export const activateRole = async (req, res) => {
         // With singular role column, activation is just updating the current role
         const updatedUser = await prisma.user.update({
             where: { id: req.user.userId },
-            data: { role: role }
+            data: { activeRole: role }
         });
 
         res.json({ message: 'Rol activado correctamente', user: updatedUser });
@@ -163,7 +163,7 @@ export const switchRole = async (req, res) => {
         // With singular role column, switching is just updating the column
         const updatedUser = await prisma.user.update({
             where: { id: req.user.userId },
-            data: { role: role }
+            data: { activeRole: role }
         });
 
         res.json({ message: 'Rol cambiado correctamente', user: updatedUser });
@@ -183,7 +183,7 @@ export const getUserById = async (req, res) => {
                 id: true,
                 firstName: true,
                 lastName: true,
-                role: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 latitude: true,

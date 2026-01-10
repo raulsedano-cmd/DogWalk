@@ -44,7 +44,7 @@ export const register = async (req, res) => {
                 lastName,
                 phone,
                 // roles: [role], // Field does not exist
-                role: role,
+                activeRole: role,
                 city,
                 zone,
                 bio: bio || '',
@@ -55,7 +55,7 @@ export const register = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                activeRole: true,
                 city: true,
                 zone: true,
                 bio: true,
@@ -70,8 +70,8 @@ export const register = async (req, res) => {
             {
                 userId: user.id,
                 email: user.email,
-                roles: [user.role],
-                role: user.role
+                roles: [user.activeRole],
+                activeRole: user.activeRole
             },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -107,7 +107,7 @@ export const login = async (req, res) => {
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                activeRole: true,
                 termsAccepted: true,
                 verificationStatus: true,
                 city: true,
@@ -127,12 +127,12 @@ export const login = async (req, res) => {
         }
 
         // Handle preferredRole sync before token generation
-        const needsSwitch = preferredRole && user.role !== preferredRole;
+        const needsSwitch = preferredRole && user.activeRole !== preferredRole;
 
         if (preferredRole && needsSwitch) {
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: { role: preferredRole },
+                data: { activeRole: preferredRole },
                 select: {
                     id: true,
                     email: true,
@@ -140,7 +140,7 @@ export const login = async (req, res) => {
                     firstName: true,
                     lastName: true,
                     phone: true,
-                    role: true,
+                    activeRole: true,
                     termsAccepted: true,
                     verificationStatus: true,
                     city: true,
@@ -154,8 +154,8 @@ export const login = async (req, res) => {
             {
                 userId: user.id,
                 email: user.email,
-                roles: [user.role],
-                role: user.role
+                roles: [user.activeRole],
+                activeRole: user.activeRole
             },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }

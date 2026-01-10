@@ -45,7 +45,7 @@ export const getLegalStatus = async (req, res) => {
                 id: true,
                 termsAccepted: true,
                 verificationStatus: true,
-                role: true
+                activeRole: true
             }
         });
 

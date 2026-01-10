@@ -13,8 +13,8 @@ const generateToken = (user) => {
         {
             userId: user.id,
             email: user.email,
-            roles: [user.role], // Maintain array format for frontend compatibility
-            role: user.role
+            roles: [user.activeRole], // Maintain array format for frontend compatibility
+            activeRole: user.activeRole
         },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -37,7 +37,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             lastName: true,
             phone: true,
             // roles: true, // Field does not exist in DB
-            role: true,
+            activeRole: true,
             termsAccepted: true,
             verificationStatus: true,
             city: true,
@@ -47,14 +47,14 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
 
     if (user) {
         // Since we only have one role column, switching role just updates that column.
-        // If preferredRole is different from current role, we update it.
-        if (preferredRole && user.role !== preferredRole) {
+        // If preferredRole is different from current activeRole, we update it.
+        if (preferredRole && user.activeRole !== preferredRole) {
             user = await prisma.user.update({
                 where: { id: user.id },
-                data: { role: preferredRole },
+                data: { activeRole: preferredRole },
                 select: {
                     id: true, email: true, firstName: true, lastName: true, phone: true,
-                    role: true, termsAccepted: true, verificationStatus: true,
+                    activeRole: true, termsAccepted: true, verificationStatus: true,
                     city: true, zone: true
                 }
             });
@@ -72,7 +72,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             lastName: true,
             phone: true,
             // roles: true,
-            role: true,
+            activeRole: true,
             termsAccepted: true,
             verificationStatus: true,
             city: true,
@@ -88,8 +88,8 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             emailVerified: true
         };
 
-        if (preferredRole && user.role !== preferredRole) {
-            updateData.role = preferredRole;
+        if (preferredRole && user.activeRole !== preferredRole) {
+            updateData.activeRole = preferredRole;
         }
 
         user = await prisma.user.update({
@@ -97,7 +97,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             data: updateData,
             select: {
                 id: true, email: true, firstName: true, lastName: true, phone: true,
-                role: true, termsAccepted: true, verificationStatus: true,
+                activeRole: true, termsAccepted: true, verificationStatus: true,
                 city: true, zone: true
             }
         });
@@ -105,7 +105,7 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
     }
 
     // 3. Create new user
-    // Note: We provide default values for mandatory fields.
+    // Note: We provide default values for mandatory fields. 
     // The frontend should check if profile is complete (e.g. phone, city, zone).
     return await prisma.user.create({
         data: {
@@ -116,6 +116,13 @@ const handleSocialAuth = async (email, providerUserId, authProvider, firstName, 
             city: '',  // Placeholder
             zone: '',  // Placeholder
             // roles: preferredRole === 'WALKER' ? ['OWNER', 'WALKER'] : ['OWNER'], // Removed
+            activeRole: preferredRole || 'OWNER',
+            authProvider,
+            providerUserId,
+            emailVerified: true
+        },
+        select: {
+            id: true,
             email: true,
             firstName: true,
             lastName: true,
@@ -160,8 +167,8 @@ export const googleLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                roles: [user.role],
-                role: user.role,
+                roles: [user.activeRole],
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)
@@ -202,8 +209,8 @@ export const facebookLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                roles: [user.role],
-                role: user.role,
+                roles: [user.activeRole],
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)
@@ -247,8 +254,8 @@ export const microsoftLogin = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                roles: [user.role],
-                role: user.role,
+                roles: [user.activeRole],
+                activeRole: user.activeRole,
                 termsAccepted: user.termsAccepted,
                 verificationStatus: user.verificationStatus,
                 isProfileComplete: !!(user.phone && user.city && user.zone)
