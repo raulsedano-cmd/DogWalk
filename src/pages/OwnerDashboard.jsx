@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../services/api';
 
 const OwnerDashboard = () => {
+    const { user } = useAuth();
     const [walkRequests, setWalkRequests] = useState([]);
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,8 +19,8 @@ const OwnerDashboard = () => {
                 api.get('/walk-requests'),
                 api.get('/social/favorites')
             ]);
-            setWalkRequests(requestsRes.data.requests);
-            setFavorites(favRes.data);
+            setWalkRequests(requestsRes.data.requests || []);
+            setFavorites(favRes.data || []);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -30,7 +32,6 @@ const OwnerDashboard = () => {
         if (!window.confirm('¿Estás seguro de que deseas eliminar esta solicitud?')) return;
         try {
             await api.delete(`/walk-requests/${id}`);
-            alert('Solicitud eliminada');
             loadData();
         } catch (error) {
             alert('Error al eliminar solicitud');
@@ -42,147 +43,237 @@ const OwnerDashboard = () => {
     const completedRequests = walkRequests.filter(r => r.status === 'COMPLETED');
 
     if (loading) {
-        return <div className="container mx-auto px-4 py-8">Cargando...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-6">
+                    <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin"></div>
+                    <p className="text-gray-400 font-black tracking-widest text-[10px] uppercase">Preparando tu Panel...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <h1 className="text-2xl sm:text-3xl font-black text-gray-800">Mis Solicitudes de Paseo</h1>
-                <div className="flex w-full sm:w-auto gap-2 flex-wrap">
-                    <Link to="/owner/saved-addresses" className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg flex-1 sm:flex-none text-center py-2.5 px-3 text-xs sm:text-sm font-medium transition-colors">
-                        📍 Mis Direcciones
-                    </Link>
-                    <Link to="/dogs" className="btn-secondary flex-1 sm:flex-none text-center py-2.5 px-3 text-xs sm:text-sm">
-                        Gestionar Perros
-                    </Link>
-                    <Link to="/walk-requests/new" className="btn-primary flex-1 sm:flex-none text-center py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap">
-                        + Nueva Solicitud
-                    </Link>
+        <div className="min-h-screen bg-[#FDFEFE] pb-32">
+            {/* Premium Header/Hero Section */}
+            <div className="bg-white border-b border-gray-100 pb-20 pt-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-12">
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2 bg-primary-50 px-4 py-1.5 rounded-full border border-primary-100">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                                </span>
+                                <span className="text-[10px] font-black text-primary-700 uppercase tracking-widest">Panel de Propietario</span>
+                            </div>
+                            <h1 className="text-5xl lg:text-7xl font-black text-gray-900 tracking-tight leading-[0.9]">
+                                Hola, <span className="text-primary-600">{user?.firstName || 'Dueño'}</span> 👋
+                            </h1>
+                            <p className="text-gray-400 font-bold text-xl max-w-xl leading-relaxed">Gestiona los paseos y seguridad de tus mejores amigos desde un solo lugar.</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+                            <Link to="/walk-requests/new" className="flex-1 lg:flex-none bg-gray-900 hover:bg-black text-white px-10 py-5 rounded-[24px] font-black shadow-[10px_20px_40px_rgba(0,0,0,0.15)] transition-all active:scale-95 flex items-center justify-center gap-3 text-lg group">
+                                <span className="text-2xl group-hover:rotate-90 transition-transform">+</span> Nueva Solicitud
+                            </Link>
+                            <Link to="/dogs" className="flex-1 lg:flex-none bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-100 px-10 py-5 rounded-[24px] font-black transition-all active:scale-95 flex items-center justify-center gap-3 text-lg">
+                                🐕 Mis Perros
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Favorite Walkers */}
-            {favorites.length > 0 && (
-                <section className="mb-8">
-                    <h2 className="text-2xl font-semibold mb-4">Mis Paseadores Favoritos ❤️</h2>
-                    <div className="flex gap-4 overflow-x-auto pb-4">
-                        {favorites.map(fav => (
-                            <Link key={fav.id} to={`/profile/${fav.walker.id}`} className="card min-w-[250px] flex items-center gap-3 hover:shadow-md transition-all">
-                                <img
-                                    src={getImageUrl(fav.walker.profilePhotoUrl)}
-                                    alt="profile"
-                                    className="w-14 h-14 rounded-full object-cover border-2 border-primary-100"
-                                />
-                                <div>
-                                    <h3 className="font-semibold">{fav.walker.firstName} {fav.walker.lastName}</h3>
-                                    <p className="text-sm text-gray-500">⭐ {fav.walker.averageRating.toFixed(1)}</p>
-                                    <p className="text-xs text-gray-400">{fav.walker.baseCity}</p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {/* Open Requests */}
-            <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Solicitudes Abiertas</h2>
-                {openRequests.length === 0 ? (
-                    <p className="text-gray-600">No tienes solicitudes abiertas</p>
-                ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {openRequests.map(request => (
-                            <div key={request.id} className="card hover:shadow-md transition-shadow relative">
-                                <Link to={`/walk-requests/${request.id}`} className="absolute inset-0 z-0"></Link>
-                                <div className="relative z-10 pointer-events-none">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-semibold text-lg">{request.dog.name}</h3>
-                                        <span className="badge badge-open">{request.status}</span>
-                                    </div>
-                                    <p className="text-gray-600 text-sm mb-2">{request.zone}</p>
-                                    <p className="text-gray-600 text-sm mb-2">
-                                        {new Date(request.date).toLocaleDateString()} - {request.startTime}
-                                    </p>
-                                    <p className="text-gray-600 text-sm">{request.durationMinutes} min</p>
-                                    <p className="text-primary-600 font-semibold mt-2">S/ {request.suggestedPrice}</p>
-                                    <p className="text-sm text-gray-500 mt-2">{request.offers?.length || 0} ofertas</p>
-                                </div>
-                                <div className="mt-4 flex flex-col gap-2 relative z-20">
-                                    <div className="flex gap-2">
-                                        <Link
-                                            to={`/walk-requests/${request.id}/edit`}
-                                            className="btn-secondary text-xs py-1.5 flex-1 text-center"
-                                        >
-                                            ✏️ Editar
-                                        </Link>
-                                        <Link
-                                            to={`/walk-requests/${request.id}`}
-                                            className="btn-primary text-xs py-1.5 flex-1 text-center"
-                                        >
-                                            Ver Detalles
-                                        </Link>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(request.id)}
-                                        className="w-full bg-red-50 text-red-600 hover:bg-red-100 text-xs py-1.5 rounded-lg font-semibold transition-colors border border-red-200"
-                                    >
-                                        🗑️ Eliminar Solicitud
-                                    </button>
-                                </div>
+            <div className="container mx-auto px-6 -translate-y-12">
+                {/* Statistics Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+                    {[
+                        { label: 'Activos', val: assignedRequests.length, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Abiertos', val: openRequests.length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                        { label: 'Favoritos', val: favorites.length, color: 'text-red-500', bg: 'bg-red-50' },
+                        { label: 'Total Historial', val: completedRequests.length, color: 'text-gray-900', bg: 'bg-gray-50' }
+                    ].map((s, i) => (
+                        <div key={i} className="bg-white p-8 rounded-[36px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all group">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">{s.label}</p>
+                            <div className="flex items-center gap-4">
+                                <p className={`text-4xl font-black ${s.color} tracking-tighter`}>{s.val}</p>
+                                <div className={`w-10 h-1 h-3 rounded-full ${s.bg}`}></div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </section>
+                        </div>
+                    ))}
+                </div>
 
-            {/* Assigned Requests */}
-            <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Paseos Asignados</h2>
-                {assignedRequests.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed">
-                        <p className="text-gray-500">No tienes paseos próximos.</p>
-                    </div>
-                ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {assignedRequests.map(request => (
-                            <Link key={request.id} to={`/walk-requests/${request.id}`} className="card hover:shadow-md transition-shadow border-l-4 border-l-primary-500">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-semibold text-lg">{request.dog.name}</h3>
-                                    <span className="badge badge-assigned">{request.status}</span>
-                                </div>
-                                <p className="text-gray-600 text-sm mb-2">{request.zone}</p>
-                                <p className="text-gray-600 text-sm">
-                                    📅 {new Date(request.date).toLocaleDateString()} 🕒 {request.startTime}
-                                </p>
-                            </Link>
-                        ))}
-                    </div>
+                {/* Priority: Live Tracking or Upcoming Walks */}
+                {assignedRequests.length > 0 && (
+                    <section className="mb-20 animate-fadeIn">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-2 h-10 bg-primary-600 rounded-full shadow-[0_0_15px_rgba(255,107,0,0.3)]"></div>
+                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Atención Prioritaria</h2>
+                        </div>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {assignedRequests.map(request => (
+                                <Link key={request.id} to={`/walk-requests/${request.id}`} className="group bg-white rounded-[40px] p-10 shadow-[0_15px_45px_rgba(0,0,0,0.05)] border border-gray-100 hover:border-primary-200 transition-all relative overflow-hidden flex flex-col justify-between">
+                                    {request.status === 'IN_PROGRESS' && (
+                                        <div className="absolute top-0 right-0 p-6">
+                                            <div className="bg-indigo-600 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse border-4 border-indigo-50 shadow-lg">
+                                                🛰️ GPS En Vivo
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="space-y-8">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-20 h-20 bg-primary-50 rounded-[28px] flex items-center justify-center text-4xl group-hover:rotate-6 transition-transform shadow-inner">🐕</div>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-gray-900 group-hover:text-primary-600 transition-colors tracking-tight">{request.dog.name}</h3>
+                                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mt-1">{request.zone}</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[#F8FAFC] rounded-[24px] p-6 grid grid-cols-2 gap-4 font-black text-xs text-gray-500 border border-gray-50">
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] uppercase tracking-widest opacity-50">Fecha</p>
+                                                <p className="text-gray-900">{new Date(request.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</p>
+                                            </div>
+                                            <div className="space-y-1 border-l border-gray-200 pl-4">
+                                                <p className="text-[9px] uppercase tracking-widest opacity-50">Salida</p>
+                                                <p className="text-gray-900 font-black">{request.startTime}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">Gestionar Paseo</span>
+                                        <span className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary-600 group-hover:text-white transition-all text-gray-400">→</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
                 )}
-            </section>
 
-            {/* Completed Requests */}
-            <section>
-                <h2 className="text-2xl font-semibold mb-4">Paseos Completados</h2>
-                {completedRequests.length === 0 ? (
-                    <p className="text-gray-600">No tienes paseos completados</p>
-                ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {completedRequests.map(request => (
-                            <Link key={request.id} to={`/walk-requests/${request.id}`} className="card hover:shadow-md transition-shadow opacity-75">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-semibold text-lg">{request.dog.name}</h3>
-                                    <span className="badge badge-completed">{request.status}</span>
-                                </div>
-                                <p className="text-gray-600 text-sm mb-2">{request.zone}</p>
-                                <p className="text-gray-600 text-sm">
-                                    {new Date(request.date).toLocaleDateString()}
-                                </p>
-                            </Link>
-                        ))}
+                {/* Open Requests Feed */}
+                <section className="mb-20">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-10 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.2)]"></div>
+                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Solicitudes Abiertas</h2>
+                        </div>
+                        {openRequests.length > 0 && <span className="bg-emerald-50 text-emerald-600 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest">{openRequests.length} Publicadas</span>}
                     </div>
+
+                    {openRequests.length === 0 ? (
+                        <div className="bg-white rounded-[50px] p-24 text-center border border-gray-100 shadow-[0_10px_60px_-15px_rgba(0,0,0,0.03)] group">
+                            <div className="text-8xl mb-8 grayscale opacity-10 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700">📋</div>
+                            <div className="space-y-4 max-w-md mx-auto">
+                                <h3 className="text-2xl font-black text-gray-900">¿Listo para un paseo?</h3>
+                                <p className="text-gray-400 font-bold leading-relaxed mb-8">No tienes solicitudes activas buscando paseador en este momento.</p>
+                                <Link to="/walk-requests/new" className="inline-block bg-primary-600 text-white px-12 py-5 rounded-[22px] font-black hover:bg-primary-700 shadow-xl shadow-primary-200 transition-all active:scale-95">
+                                    Publicar Paseo Ahora
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {openRequests.map(request => (
+                                <div key={request.id} className="bg-white rounded-[40px] p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-2xl transition-all">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div>
+                                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">{request.dog.name}</h3>
+                                                <p className="text-xs font-black text-gray-400 tracking-widest uppercase mt-1">{request.zone}</p>
+                                            </div>
+                                            <div className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                                                Abierta
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                            <div className="bg-[#F8FAFC] p-5 rounded-[24px] border border-gray-50">
+                                                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Fee</p>
+                                                <p className="text-xl font-black text-primary-600">S/ {request.suggestedPrice}</p>
+                                            </div>
+                                            <div className="bg-[#F8FAFC] p-5 rounded-[24px] border border-gray-50">
+                                                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Candidatos</p>
+                                                <p className="text-xl font-black text-gray-900">{request.offers?.length || 0}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex gap-3">
+                                            <Link to={`/walk-requests/${request.id}`} className="flex-1 bg-gray-900 hover:bg-black text-white py-4 rounded-[18px] font-black text-center text-sm shadow-xl transition-all active:scale-95">
+                                                Ver Ofertas
+                                            </Link>
+                                            <Link to={`/walk-requests/${request.id}/edit`} className="p-4 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-colors flex items-center justify-center">
+                                                ✏️
+                                            </Link>
+                                        </div>
+                                        <button onClick={() => handleDelete(request.id)} className="w-full text-center text-red-500/50 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors py-2">
+                                            Eliminar Solicitud
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {/* Trusted Walkers Section */}
+                {favorites.length > 0 && (
+                    <section className="mb-20">
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="w-2 h-10 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.2)]"></div>
+                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Tus Paseadores</h2>
+                        </div>
+                        <div className="flex gap-6 overflow-x-auto pb-10 -mx-6 px-6 no-scrollbar">
+                            {favorites.map(fav => (
+                                <Link key={fav.id} to={`/profile/${fav.walker.id}`} className="min-w-[320px] bg-white rounded-[40px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-6 hover:shadow-2xl hover:-translate-y-2 transition-all group">
+                                    <div className="relative">
+                                        <img
+                                            src={getImageUrl(fav.walker.profilePhotoUrl)}
+                                            alt="profile"
+                                            className="w-20 h-20 rounded-[28px] object-cover border-4 border-white shadow-lg group-hover:scale-110 transition-transform"
+                                        />
+                                        <div className="absolute -bottom-1 -right-1 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-lg border-4 border-white">❤️</div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl font-black text-gray-900 leading-none">{fav.walker.firstName}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-amber-400 text-sm">⭐</span>
+                                            <span className="text-xs font-black text-gray-700">{fav.walker.averageRating.toFixed(1)}</span>
+                                            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest ml-1">• {fav.walker.baseZone || 'Lima'}</span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
                 )}
-            </section>
+
+                {/* History Memories */}
+                {completedRequests.length > 0 && (
+                    <section>
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="w-2 h-10 bg-gray-200 rounded-full"></div>
+                            <h2 className="text-3xl font-black text-gray-400 tracking-tight">Historial de Confianza</h2>
+                        </div>
+                        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {completedRequests.slice(0, 4).map(request => (
+                                <Link key={request.id} to={`/walk-requests/${request.id}`} className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 opacity-60 hover:opacity-100 hover:shadow-xl transition-all flex flex-col items-center text-center gap-4 group">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🦴</div>
+                                    <div>
+                                        <h3 className="font-black text-gray-900 text-lg leading-tight">{request.dog.name}</h3>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                            {new Date(request.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </div>
         </div>
     );
 };

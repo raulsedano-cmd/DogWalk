@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar';
 
 const WalkerDashboard = () => {
     const navigate = useNavigate();
-    const { user, updateUser } = useAuth(); // Assuming updateUser updates context
+    const { user, updateUser } = useAuth();
     const [availableRequests, setAvailableRequests] = useState([]);
     const [myAssignments, setMyAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,21 +18,15 @@ const WalkerDashboard = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Status Toggle State
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
-    // Report Form State
-    const [reportingAssignmentId, setReportingAssignmentId] = useState(null);
-    const [reportData, setReportData] = useState({
-        didPee: false,
-        didPoop: false,
-        behaviorRating: 5,
-        reportNotes: ''
-    });
-
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (window.innerWidth <= 800) ||
-        ('ontouchstart' in window);
+    // Status metrics
+    const metrics = [
+        { label: 'Rating', value: user.averageRating?.toFixed(1) || '5.0', icon: '⭐', color: 'text-amber-400' },
+        { label: 'Paseos', value: user.completedWalks || '0', icon: '🐕', color: 'text-emerald-400' },
+        { label: 'Nivel', value: 'Pro', icon: '💎', color: 'text-indigo-400' },
+        { label: 'Estado', value: user.verificationStatus === 'VERIFIED' ? 'Verificado' : 'Pendiente', icon: '🛡️', color: 'text-blue-400' }
+    ];
 
     useEffect(() => {
         loadData();
@@ -47,9 +41,9 @@ const WalkerDashboard = () => {
                 api.get('/walk-assignments'),
             ]);
 
-            setAvailableRequests(requestsRes.data.requests);
-            setTotalPages(requestsRes.data.pagination.totalPages);
-            setMyAssignments(assignmentsRes.data);
+            setAvailableRequests(requestsRes.data.requests || []);
+            setTotalPages(requestsRes.data.pagination?.totalPages || 1);
+            setMyAssignments(assignmentsRes.data || []);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -66,18 +60,12 @@ const WalkerDashboard = () => {
         setAvailabilityLoading(true);
         try {
             const newStatus = !user.isAvailable;
-            // Update via API
             const response = await api.put('/users/me', { isAvailable: newStatus });
-
-            // Update context and storage immediately
-            // Backend returns { message: '...', user: updatedUser }
             if (response.data.user) {
                 updateUser(response.data.user);
             } else {
-                // Fallback if backend structure differs, though controller sends { user }
                 updateUser({ ...user, isAvailable: newStatus });
             }
-
         } catch (error) {
             console.error('Error updating availability:', error);
             alert('Error al actualizar disponibilidad');
@@ -86,63 +74,16 @@ const WalkerDashboard = () => {
         }
     };
 
-    const handleCompleteClick = (assignmentId) => {
-        if (reportingAssignmentId === assignmentId) {
-            setReportingAssignmentId(null); // Toggle off
-        } else {
-            setReportingAssignmentId(assignmentId);
-            setReportData({
-                didPee: false,
-                didPoop: false,
-                behaviorRating: 5,
-                reportNotes: ''
-            });
-        }
-    };
-
-    const submitCompletion = async (assignmentId) => {
-        try {
-            await api.put(`/walk-assignments/${assignmentId}/status`, {
-                status: 'COMPLETED',
-                ...reportData
-            });
-            alert('¡Paseo completado y reporte enviado!');
-            setReportingAssignmentId(null);
-            loadData();
-        } catch (error) {
-            console.error('Error completing walk:', error);
-            alert('Error al completar el paseo');
-        }
-    };
-
-    if (loading) {
-        return <div className="container mx-auto px-4 py-8">Cargando...</div>;
-    }
-
     const handleUpdateAssignment = async (assignmentId, action) => {
         try {
             let endpoint = `/walk-assignments/${assignmentId}/${action === 'IN_PROGRESS' ? 'start' : 'status'}`;
-            let payload = {};
-
-            if (action === 'IN_PROGRESS') {
-                // No payload needed for start endpoint currently as per my previous backend implementation
-            } else {
-                payload = { status: action };
-                if (action === 'COMPLETED') {
-                    Object.assign(payload, reportData);
-                }
-            }
-
-            await api.put(endpoint, payload);
+            await api.put(endpoint, { status: action === 'IN_PROGRESS' ? undefined : action });
 
             if (action === 'IN_PROGRESS') {
                 navigate(`/walk-assignments/${assignmentId}/in-progress`);
                 return;
             }
-
             loadData();
-            setReportingAssignmentId(null);
-            alert(`Paseo ${action === 'COMPLETED' ? 'finalizado' : 'actualizado'}`);
         } catch (error) {
             alert(error.response?.data?.error || 'Error al actualizar paseo');
         }
@@ -151,311 +92,245 @@ const WalkerDashboard = () => {
     const handleArrived = async (assignmentId) => {
         try {
             await api.put(`/walk-assignments/${assignmentId}/arrived`);
-            // Update local state
             setMyAssignments(prev => prev.map(a =>
                 a.id === assignmentId ? { ...a, walkerArrivedAt: new Date().toISOString() } : a
             ));
-            alert("¡Llegada notificada al dueño! 🏠");
         } catch (error) {
-            console.error(error);
             alert("Error al notificar llegada");
         }
     };
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (window.innerWidth <= 800) ||
+        ('ontouchstart' in window);
+
     const pendingAssignments = myAssignments.filter(a => a.status === 'PENDING' || a.status === 'IN_PROGRESS');
-    const completedAssignments = myAssignments.filter(a => a.status === 'COMPLETED');
+    const inProgressWalk = pendingAssignments.find(a => a.status === 'IN_PROGRESS');
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <p className="text-emerald-500 font-black tracking-widest text-[10px] uppercase">Sincronizando Terminal...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div className="flex items-center gap-4">
-                    <Avatar
-                        src={user.profilePhotoUrl}
-                        alt="Profile"
-                        size="16"
-                        fallbackText={user.firstName}
-                        className="border-2 border-walker-500 shadow-sm"
-                    />
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Panel de Paseador</h1>
-                        <p className="text-gray-500">Bienvenido de nuevo, {user.firstName || 'Paseador'}</p>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-[#0F172A] pb-32 font-sans selection:bg-emerald-500/30">
+            {/* Control Center Header */}
+            <div className="bg-[#1E293B] border-b border-white/5 pb-20 pt-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
 
-                {/* Availability Toggle */}
-                <div className="flex items-center bg-white p-4 rounded-xl shadow-sm border w-full md:w-auto">
-                    <div className="mr-4">
-                        <p className="text-xs text-gray-500 uppercase font-semibold">Tu Estado</p>
-                        <p className={`font-bold ${user.isAvailable ? 'text-green-600' : 'text-red-500 flex items-center gap-1'}`}>
-                            {user.isAvailable ? '● DISPONIBLE' : '○ NO DISPONIBLE'}
-                        </p>
-                        <p className="text-[9px] text-gray-400 font-medium">Permanecerá así hasta que lo cambies.</p>
-                    </div>
-                    <button
-                        onClick={toggleAvailability}
-                        disabled={availabilityLoading}
-                        className={`px-6 py-2 rounded-lg font-bold transition-all shadow-sm ${user.isAvailable
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'bg-green-500 text-white hover:bg-green-600'
-                            }`}
-                    >
-                        {availabilityLoading ? '...' : (user.isAvailable ? 'Desactivar' : 'Activar')}
-                    </button>
-                </div>
-            </div>
-
-            {/* Legal Verification Alert */}
-            {user.activeRole === 'WALKER' && user.verificationStatus !== 'VERIFIED' && (
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 rounded-r-xl shadow-sm animate-pulse-slow">
-                    <div className="flex items-start gap-4">
-                        <div className="text-3xl">🆔</div>
-                        <div className="flex-1">
-                            <h3 className="text-blue-900 font-black text-lg mb-1">Verificación de Identidad Requerida</h3>
-                            <p className="text-blue-800 text-sm mb-4">
-                                Según los <strong>Términos y Condiciones</strong>, debes completar tu verificación de identidad (DNI) para poder enviar ofertas y realizar paseos. Esto nos ayuda a mantener una comunidad segura.
-                            </p>
-                            <Link
-                                to="/verificar-paseador"
-                                className="inline-block bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                            >
-                                {user.verificationStatus === 'PENDING' ? 'Ver Estado de Verificación' : 'Verificar Mi Identidad Ahora'}
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Config Validity Alert */}
-            {user.activeRole === 'WALKER' && (!user.baseCity && !user.baseZone && !user.latitude) && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
-                    <div className="flex">
-                        <div className="ml-3">
-                            <p className="text-sm text-yellow-700">
-                                ⚠️ Configura tu <strong>Ubicación de Servicio</strong> en tu <Link to="/profile" className="underline font-bold">Perfil</Link> para recibir solicitudes en tu zona.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <h2 className="text-2xl font-bold mb-4">Solicitudes Disponibles</h2>
-
-            {/* Filters */}
-            <div className="card mb-8">
-                <h2 className="text-lg font-semibold mb-4">Filtros</h2>
-                <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Ciudad
-                        </label>
-                        <input
-                            type="text"
-                            name="city"
-                            className="input-field"
-                            value={filters.city}
-                            onChange={handleFilterChange}
-                            placeholder="Ej: Ciudad de México"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Zona
-                        </label>
-                        <input
-                            type="text"
-                            name="zone"
-                            className="input-field"
-                            value={filters.zone}
-                            onChange={handleFilterChange}
-                            placeholder="Ej: Condesa"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tamaño del Perro
-                        </label>
-                        <select
-                            name="size"
-                            className="input-field"
-                            value={filters.size}
-                            onChange={handleFilterChange}
-                        >
-                            <option value="">Todos</option>
-                            <option value="SMALL">Pequeño</option>
-                            <option value="MEDIUM">Mediano</option>
-                            <option value="LARGE">Grande</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Available Requests */}
-            <section className="mb-8">
-                {availableRequests.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
-                        <p className="font-semibold text-gray-700">No hay solicitudes disponibles actualmente.</p>
-                        <div className="mt-2 text-sm">
-                            <p>Tu área de servicio: <span className="text-walker-600 font-bold">
-                                {user.baseZone || user.baseCity || (user.latitude ? 'Configurada (GPS)' : 'No configurada')}
-                            </span></p>
-                            <p>Radio de servicio: <span className="font-bold">{user.serviceRadiusKm || 5} km</span></p>
-                            <p>Estado: {user.isAvailable ? <span className="text-green-600 font-bold">Disponible</span> : <span className="text-red-600 font-bold">No Disponible</span>}</p>
-                        </div>
-                        {!user.isAvailable && (
-                            <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg inline-block">
-                                ⚠️ Debes activar tu estado como <strong>DISPONIBLE</strong> para recibir solicitudes.
-                            </div>
-                        )}
-                        {user.isAvailable && (
-                            <div className="mt-4 text-xs space-y-2">
-                                <p className="italic">
-                                    Si no ves solicitudes cercanas, verifica que hayas seleccionado tu ubicación exacta en el mapa de tu perfil.
-                                </p>
-                                <p className="text-blue-600">
-                                    💡 El sistema ahora usa <strong>GPS (Mapas)</strong> para encontrar paseos cerca de ti de forma precisa.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                            {availableRequests.map(request => (
-                                <Link key={request.id} to={`/walk-requests/${request.id}`} className="card hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-semibold text-lg">{request.dog.name}</h3>
-                                        <span className="badge badge-open">{request.dog.size}</span>
-                                    </div>
-                                    <p className="text-gray-600 text-sm mb-1">{request.zone}</p>
-                                    <p className="text-gray-600 text-sm mb-1">
-                                        {new Date(request.date).toLocaleDateString()} - {request.startTime}
-                                    </p>
-                                    <p className="text-gray-600 text-sm mb-2">{request.durationMinutes} min</p>
-                                    <p className="text-walker-600 font-semibold">S/ {request.suggestedPrice}</p>
-                                    {request.details && (
-                                        <p className="text-gray-500 text-sm mt-2 line-clamp-2">{request.details}</p>
-                                    )}
-                                </Link>
-                            ))}
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex justify-center gap-2">
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    className="btn-secondary disabled:opacity-50"
-                                >
-                                    Anterior
-                                </button>
-                                <span className="px-4 py-2">
-                                    Página {page} de {totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={page === totalPages}
-                                    className="btn-secondary disabled:opacity-50"
-                                >
-                                    Siguiente
-                                </button>
-                            </div>
-                        )}
-                    </>
-                )}
-            </section>
-
-            {/* My Assignments */}
-            <section className="mb-8" id="assignments">
-                <h2 className="text-2xl font-semibold mb-4">Mis Paseos Asignados</h2>
-                {pendingAssignments.length === 0 ? (
-                    <p className="text-gray-600">No tienes paseos asignados</p>
-                ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {pendingAssignments.map(assignment => (
-                            <div
-                                key={assignment.id}
-                                className="card border-l-4 border-l-walker-500 cursor-pointer hover:shadow-md transition-shadow"
-                                onClick={(e) => {
-                                    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
-                                        navigate(`/walk-requests/${assignment.walkRequestId}`);
-                                    }
-                                }}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-semibold text-lg">{assignment.walkRequest.dog.name}</h3>
-                                    <span className={`badge badge-${assignment.status.toLowerCase()}`}>{assignment.status === 'IN_PROGRESS' ? 'EN CURSO' : assignment.status}</span>
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
+                        <div className="flex items-center gap-6">
+                            <div className="relative">
+                                <Avatar
+                                    src={user.profilePhotoUrl}
+                                    alt="Profile"
+                                    size="32"
+                                    fallbackText={user.firstName}
+                                    className="border-4 border-emerald-500/20 shadow-2xl rounded-[32px] w-24 h-24 lg:w-32 lg:h-32 object-cover"
+                                />
+                                <div className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-[#1E293B] flex items-center justify-center shadow-lg ${user.isAvailable ? 'bg-emerald-500 pulse-ring' : 'bg-red-500'}`}>
+                                    <span className="text-white text-[10px] font-black">{user.isAvailable ? 'ON' : 'OFF'}</span>
                                 </div>
-                                <p className="text-gray-600 text-sm mb-1">{assignment.walkRequest.zone}</p>
-                                <p className="text-gray-600 text-sm mb-2">
-                                    📅 {new Date(assignment.walkRequest.date).toLocaleDateString()} 🕒 {assignment.walkRequest.startTime}
+                            </div>
+                            <div className="space-y-1">
+                                <h1 className="text-3xl lg:text-5xl font-black text-white tracking-tight leading-none">
+                                    {user.firstName} <span className="text-emerald-500">{user.lastName}</span>
+                                </h1>
+                                <p className="text-gray-400 font-bold text-xs uppercase tracking-[0.3em]">Walker Terminal v2.0</p>
+                            </div>
+                        </div>
+
+                        {/* Master Availability Toggle */}
+                        <div className="bg-[#0F172A]/80 backdrop-blur-2xl p-8 rounded-[40px] border border-white/5 w-full lg:w-auto flex flex-col sm:flex-row items-center gap-10 shadow-2xl">
+                            <div className="text-center sm:text-left space-y-1">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Estado Global</p>
+                                <p className={`text-2xl font-black ${user.isAvailable ? 'text-white' : 'text-gray-500/50'}`}>
+                                    {user.isAvailable ? '📡 RECIBIENDO' : '🚫 DESCONECTADO'}
                                 </p>
-
-                                {assignment.status === 'PENDING' ? (
-                                    !assignment.walkerArrivedAt ? (
-                                        <div className="space-y-2 mt-2">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleArrived(assignment.id); }}
-                                                disabled={!isMobile}
-                                                className={`w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all ${isMobile ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                                            >
-                                                📍 Ya llegué
-                                            </button>
-                                            {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center">Inicia sesión desde tu celular para marcar llegada</p>}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2 mt-2">
-                                            <div className="p-2 bg-blue-50 text-blue-800 text-[10px] font-black rounded-lg text-center animate-pulse tracking-tight">
-                                                ✅ LLEGADA NOTIFICADA. ESPERANDO...
-                                            </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleUpdateAssignment(assignment.id, 'IN_PROGRESS'); }}
-                                                disabled={!isMobile}
-                                                className={`w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all ${isMobile ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                                            >
-                                                🐕 Recoger Perro
-                                            </button>
-                                            {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center">Debes estar en tu móvil para recoger al perro</p>}
-                                        </div>
-                                    )
-                                ) : (
-                                    <div className="space-y-2 mt-2">
-                                        <button
-                                            onClick={() => navigate(`/walk-assignments/${assignment.id}/in-progress`)}
-                                            disabled={!isMobile}
-                                            className={`w-full py-4 rounded-2xl font-black flex justify-center items-center gap-2 shadow-xl transition-all ${isMobile ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                                        >
-                                            📱 SEGUIMIENTO EN VIVO
-                                        </button>
-                                        {!isMobile && <p className="text-[10px] text-red-500 font-bold text-center uppercase tracking-widest">Uso exclusivo en celular</p>}
-                                    </div>
-                                )}
                             </div>
-                        ))}
+                            <button
+                                onClick={toggleAvailability}
+                                disabled={availabilityLoading}
+                                className={`h-20 px-12 rounded-[24px] font-black text-lg transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl ${user.isAvailable
+                                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-red-500/20'
+                                    : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-500/20'
+                                    }`}
+                            >
+                                {availabilityLoading ? 'Cargando...' : (user.isAvailable ? 'Apagar' : 'Encender')}
+                            </button>
+                        </div>
                     </div>
-                )}
-            </section>
+                </div>
+            </div>
 
-            {/* Completed Assignments */}
-            <section>
-                <h2 className="text-2xl font-semibold mb-4">Paseos Completados</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {completedAssignments.slice(0, 3).map(assignment => (
-                        <div key={assignment.id} className="card bg-gray-50 opacity-75">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-semibold">{assignment.walkRequest.dog.name}</h3>
-                                <span className="badge badge-completed">COMPLETADO</span>
+            <div className="container mx-auto px-6 -translate-y-10">
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+                    {metrics.map((m, idx) => (
+                        <div key={idx} className="bg-[#1E293B] p-8 rounded-[32px] border border-white/5 shadow-xl group hover:border-white/10 transition-colors">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">{m.icon}</span>
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${m.color}`}>{m.label}</span>
                             </div>
-                            <p className="text-xs text-gray-500">
-                                {new Date(assignment.actualEndTime || assignment.updatedAt).toLocaleDateString()}
-                            </p>
+                            <p className="text-4xl font-black text-white tracking-tighter">{m.value}</p>
                         </div>
                     ))}
                 </div>
-                {completedAssignments.length > 3 && (
-                    <p className="text-gray-500 mt-2 text-sm">... y {completedAssignments.length - 3} más.</p>
+
+                {/* ACTIVE MISSION (High Urgency) */}
+                {inProgressWalk && (
+                    <div className="mb-16 animate-fadeIn bg-indigo-600 rounded-[40px] p-8 lg:p-14 shadow-[0_35px_60px_-15px_rgba(79,70,229,0.3)] relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
+                        <div className="absolute top-0 right-0 p-8">
+                            <div className="bg-white/20 backdrop-blur-xl text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse border border-white/10">
+                                🛰️ Tracking Live
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-10 text-white relative z-10">
+                            <div className="text-6xl bg-white/10 w-28 h-28 rounded-[36px] flex items-center justify-center border border-white/20 shadow-inner">🐕</div>
+                            <div className="space-y-1">
+                                <h3 className="text-4xl lg:text-5xl font-black tracking-tight">{inProgressWalk.walkRequest.dog.name}</h3>
+                                <p className="text-white/60 font-bold text-xl uppercase tracking-widest text-sm">{inProgressWalk.walkRequest.zone}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => navigate(`/walk-assignments/${inProgressWalk.id}/in-progress`)}
+                            className="w-full lg:w-auto bg-white text-indigo-600 px-14 py-7 rounded-[26px] font-black text-xl shadow-2xl hover:bg-gray-50 active:scale-95 transition-all flex items-center justify-center gap-5"
+                        >
+                            Abrir Radar <span className="text-2xl">→</span>
+                        </button>
+                    </div>
                 )}
-            </section>
+
+                <div className="grid lg:grid-cols-12 gap-12">
+                    {/* Main Feed */}
+                    <div className="lg:col-span-8 space-y-10">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-2 h-10 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+                                <h2 className="text-3xl font-black text-white tracking-tight">Oportunidades</h2>
+                            </div>
+                            <div className="flex gap-4">
+                                <select
+                                    name="size"
+                                    value={filters.size}
+                                    onChange={handleFilterChange}
+                                    className="bg-[#1E293B] border border-white/10 text-white text-xs font-black px-6 py-3 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 cursor-pointer hover:bg-[#2D3B4E] transition-colors appearance-none pr-10"
+                                >
+                                    <option value="">Todos los tamaños</option>
+                                    <option value="SMALL">Pequeños</option>
+                                    <option value="MEDIUM">Medianos</option>
+                                    <option value="LARGE">Grandes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {availableRequests.length === 0 ? (
+                            <div className="bg-[#1E293B] rounded-[48px] p-24 text-center border border-white/5 shadow-2xl space-y-8">
+                                <div className="text-8xl grayscale opacity-10 animate-pulse">📡</div>
+                                <div className="space-y-4">
+                                    <p className="text-white font-black text-2xl">Buscando señales...</p>
+                                    <p className="text-gray-500 font-bold max-w-md mx-auto leading-relaxed">No hay solicitudes en tu radio de {user.serviceRadiusKm || 5}km. Mantente alerta a las notificaciones.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {availableRequests.map(request => (
+                                    <Link key={request.id} to={`/walk-requests/${request.id}`} className="group bg-[#1E293B] rounded-[40px] p-10 border border-white/5 hover:border-emerald-500/40 hover:shadow-[0_20px_50px_-12px_rgba(16,185,129,0.2)] transition-all flex flex-col justify-between">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div className="bg-[#0F172A] w-16 h-16 rounded-[24px] flex items-center justify-center text-3xl group-hover:bg-emerald-500/10 transition-colors">🐕</div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Fee Sugerido</p>
+                                                <p className="text-3xl font-black text-white">S/ {request.suggestedPrice}</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h3 className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors">{request.dog.name}</h3>
+                                                <p className="text-gray-500 font-bold">{request.zone}</p>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px] font-black text-gray-400 border-t border-white/5 pt-6 uppercase tracking-widest">
+                                                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg">🕒 {request.durationMinutes}m</span>
+                                                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg">📅 {new Date(request.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sidebar Tasks */}
+                    <div className="lg:col-span-4 space-y-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-10 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                            <h2 className="text-3xl font-black text-white tracking-tight">Agenda</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            {pendingAssignments.filter(a => a.status === 'PENDING').length === 0 ? (
+                                <div className="bg-[#1E293B]/40 rounded-[32px] p-10 border border-white/5 text-center space-y-3">
+                                    <p className="text-4xl opacity-20">📅</p>
+                                    <p className="text-gray-600 font-bold text-sm uppercase tracking-widest">Sin tareas pendientes</p>
+                                </div>
+                            ) : (
+                                pendingAssignments.filter(a => a.status === 'PENDING').map(assignment => (
+                                    <div key={assignment.id} className="bg-[#1E293B] rounded-[40px] p-8 border border-white/5 space-y-8 shadow-xl">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 bg-[#0F172A] rounded-[24px] flex items-center justify-center text-3xl">🦴</div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white">{assignment.walkRequest.dog.name}</h3>
+                                                <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mt-1">{assignment.walkRequest.startTime}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {!assignment.walkerArrivedAt ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleArrived(assignment.id); }}
+                                                    disabled={!isMobile}
+                                                    className={`w-full py-5 rounded-[22px] font-black text-sm transition-all active:scale-95 flex items-center justify-center gap-3 ${isMobile ? 'bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] hover:bg-indigo-500' : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'}`}
+                                                >
+                                                    📍 Marcar Llegada
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleUpdateAssignment(assignment.id, 'IN_PROGRESS'); }}
+                                                    disabled={!isMobile}
+                                                    className={`w-full py-5 rounded-[22px] font-black text-sm transition-all active:scale-95 flex items-center justify-center gap-3 ${isMobile ? 'bg-emerald-500 text-white shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:bg-emerald-400' : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'}`}
+                                                >
+                                                    🐕 Iniciar Paseo
+                                                </button>
+                                            )}
+                                            {!isMobile && <p className="text-[10px] text-red-500/60 font-black text-center uppercase tracking-widest">Requiere Celular</p>}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Verification Premium Notice */}
+                        {user.verificationStatus !== 'VERIFIED' && (
+                            <div className="bg-gradient-to-b from-amber-500/20 to-transparent border border-amber-500/20 rounded-[40px] p-10 space-y-6">
+                                <div className="w-16 h-16 bg-amber-500/20 rounded-2xl flex items-center justify-center text-3xl">🛡️</div>
+                                <div className="space-y-2">
+                                    <h4 className="text-amber-500 font-black text-2xl leading-tight tracking-tight">Terminal Bloqueada</h4>
+                                    <p className="text-gray-400 font-bold text-sm leading-relaxed">Para enviar ofertas y empezar a ganar, primero debemos verificar tu DNI.</p>
+                                </div>
+                                <Link to="/verificar-paseador" className="block w-full bg-amber-500 text-white py-5 rounded-[22px] font-black text-center shadow-2xl shadow-amber-500/30 hover:bg-amber-400 active:scale-95 transition-all">
+                                    Verificar Identidad
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
