@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 
 const WalkInProgress = () => {
     const { id } = useParams();
