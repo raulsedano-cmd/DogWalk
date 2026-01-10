@@ -43,7 +43,13 @@ const AdminDashboard = () => {
         }
     };
 
+    const [selectedImage, setSelectedImage] = useState(null);
+
     if (loading) return <div className="p-8">Cargando admin...</div>;
+
+    const openImage = (url) => {
+        setSelectedImage(getImageUrl(url));
+    };
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -65,17 +71,13 @@ const AdminDashboard = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <div className="text-center">
+                                <div className="text-center cursor-pointer" onClick={() => openImage(v.dniFrontPhotoUrl)}>
                                     <p className="text-xs font-bold mb-1">Frente</p>
-                                    <a href={getImageUrl(v.dniFrontPhotoUrl)} target="_blank" rel="noreferrer">
-                                        <img src={getImageUrl(v.dniFrontPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-150 transition-transform origin-bottom-right" />
-                                    </a>
+                                    <img src={getImageUrl(v.dniFrontPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-105 transition-transform" />
                                 </div>
-                                <div className="text-center">
+                                <div className="text-center cursor-pointer" onClick={() => openImage(v.dniBackPhotoUrl)}>
                                     <p className="text-xs font-bold mb-1">Dorso</p>
-                                    <a href={getImageUrl(v.dniBackPhotoUrl)} target="_blank" rel="noreferrer">
-                                        <img src={getImageUrl(v.dniBackPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-150 transition-transform origin-bottom-right" />
-                                    </a>
+                                    <img src={getImageUrl(v.dniBackPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-105 transition-transform" />
                                 </div>
                             </div>
 
@@ -91,6 +93,26 @@ const AdminDashboard = () => {
                     ))
                 )}
             </div>
+
+            {/* Image Viewer Modal */}
+            {selectedImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedImage(null)}>
+                    <div className="relative max-w-4xl w-full max-h-[90vh] flex justify-center">
+                        <img
+                            src={selectedImage}
+                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                            alt="Document Full"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <button
+                            className="absolute -top-12 right-0 text-white text-4xl font-bold hover:text-gray-300"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
