@@ -351,16 +351,38 @@ const WalkRequestDetail = () => {
                                             />
                                         )}
 
-                                        {/* Current Walker Pos - Dog Icon */}
-                                        {routePath.length > 0 && (
-                                            <Marker
-                                                position={routePath[routePath.length - 1]}
-                                                icon={{
-                                                    url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png", // Dog icon
-                                                    scaledSize: { width: 45, height: 45 },
-                                                    anchor: { x: 22, y: 22 }
-                                                }}
-                                            />
+                                        {/* Current Walker Pos - Dog Icon & Pulsing Effect */}
+                                        {(routePath.length > 0 || (request.assignment?.walker?.latitude && request.assignment?.walker?.longitude)) && (
+                                            <>
+                                                {/* Dog Icon */}
+                                                <Marker
+                                                    position={routePath.length > 0
+                                                        ? routePath[routePath.length - 1]
+                                                        : { lat: request.assignment.walker.latitude, lng: request.assignment.walker.longitude }
+                                                    }
+                                                    icon={{
+                                                        url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png",
+                                                        scaledSize: { width: 45, height: 45 },
+                                                        anchor: { x: 22, y: 22 }
+                                                    }}
+                                                    zIndex={100}
+                                                />
+                                                {/* Uber-style Pulsing Ring */}
+                                                <Marker
+                                                    position={routePath.length > 0
+                                                        ? routePath[routePath.length - 1]
+                                                        : { lat: request.assignment.walker.latitude, lng: request.assignment.walker.longitude }
+                                                    }
+                                                    icon={{
+                                                        path: window.google.maps.SymbolPath.CIRCLE,
+                                                        fillColor: '#3B82F6',
+                                                        fillOpacity: 0.15,
+                                                        strokeWeight: 0,
+                                                        scale: 30,
+                                                    }}
+                                                    zIndex={99}
+                                                />
+                                            </>
                                         )}
                                     </GoogleMap>
                                 ) : (
