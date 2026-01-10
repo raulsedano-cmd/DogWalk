@@ -364,7 +364,7 @@ model Notification {
   type      NotificationType
   title     String
   message   String           @db.Text
-  link      String?          
+  // link      String?          
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
