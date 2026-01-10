@@ -242,10 +242,10 @@ model WalkAssignment {
   // paidAt          DateTime?
 
   // Platform Commission
-  // platformFeeRate     Float             @default(0.15)
-  // platformFeeAmount   Float             @default(0)
-  // platformFeeStatus   PlatformFeeStatus @default(DUE)
-  // platformFeeSettledAt DateTime?
+  platformFeeRate     Float             @default(0.15)
+  platformFeeAmount   Float             @default(0)
+  platformFeeStatus   PlatformFeeStatus @default(DUE)
+  platformFeeSettledAt DateTime?
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
