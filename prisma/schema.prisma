@@ -18,7 +18,7 @@ model User {
   lastName      String
   phone         String
   // roles         UserRole[] @default([OWNER])
-  activeRole    UserRole   @default(OWNER) @map("role")
+  role          UserRole   @default(OWNER)
   city          String
   zone          String
   bio           String?   @db.Text
@@ -85,7 +85,7 @@ model User {
   
   @@unique([authProvider, providerUserId])
   @@index([city, zone])
-  @@index([activeRole])
+  @@index([role])
 }
 
 enum AuthProvider {
@@ -176,10 +176,10 @@ model WalkRequest {
   
   // Location
   // Location (partial - country/city pending migration)
-  latitude         Float?
-  longitude        Float?
-  country          String?
-  city             String?
+  // latitude         Float?
+  // longitude        Float?
+  // country          String?
+  // city             String?
   addressType      String?  
   addressReference String?  @db.Text  
 

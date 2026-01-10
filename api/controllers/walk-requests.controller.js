@@ -12,12 +12,12 @@ export const getWalkRequests = async (req, res) => {
         const where = {};
 
         // For walkers: show only OPEN requests
-        if (req.user.activeRole === 'WALKER') {
+        if (req.user.role === 'WALKER') {
             where.status = 'OPEN';
 
             const walker = await prisma.user.findUnique({
                 where: { id: req.user.userId },
-                select: { isAvailable: true, latitude: true, longitude: true, serviceRadiusKm: true, baseCity: true, baseZone: true }
+                select: { isAvailable: true, baseCity: true, baseZone: true }
             });
 
             if (!walker.isAvailable) {
@@ -35,32 +35,6 @@ export const getWalkRequests = async (req, res) => {
                 if (searchString) {
                     where.zone = { contains: searchString, mode: 'insensitive' };
                 }
-            } else if (walker.latitude && walker.longitude) {
-                // Default: Hybrid GPS + Zone matching
-                const radius = walker.serviceRadiusKm || 5;
-                const latDelta = radius / 111;
-                const lngDelta = radius / (111 * Math.cos(walker.latitude * Math.PI / 180));
-
-                where.OR = [
-                    {
-                        // Match by precise coordinates
-                        latitude: {
-                            gte: walker.latitude - latDelta,
-                            lte: walker.latitude + latDelta,
-                        },
-                        longitude: {
-                            gte: walker.longitude - lngDelta,
-                            lte: walker.longitude + lngDelta,
-                        }
-                    },
-                    {
-                        // OR match by Zone name (District) as backup
-                        zone: {
-                            contains: walker.baseZone || walker.baseCity,
-                            mode: 'insensitive'
-                        }
-                    }
-                ];
             } else if (walker.baseZone || walker.baseCity) {
                 // Fallback to zone string matching if no coordinates and no manual filter
                 where.zone = {
@@ -69,7 +43,7 @@ export const getWalkRequests = async (req, res) => {
                 };
             }
 
-        } else if (req.user.activeRole === 'OWNER') {
+        } else if (req.user.role === 'OWNER') {
             where.ownerId = req.user.userId;
             if (status) where.status = status;
         }
@@ -189,9 +163,7 @@ export const createWalkRequest = async (req, res) => {
             durationMinutes,
             zone,
             suggestedPrice,
-            details,
-            latitude,
-            longitude
+            details
         } = req.body;
 
         // Validation
@@ -223,8 +195,8 @@ export const createWalkRequest = async (req, res) => {
                 suggestedPrice: parseFloat(suggestedPrice),
                 details: details || null,
                 status: 'OPEN',
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
+                // latitude: latitude ? parseFloat(latitude) : null,
+                // longitude: longitude ? parseFloat(longitude) : null,
                 // country: req.body.country || null,  
                 // city: req.body.city || null,        
                 addressType: req.body.addressType || null,
@@ -244,7 +216,7 @@ export const createWalkRequest = async (req, res) => {
         try {
             const availableWalkers = await prisma.user.findMany({
                 where: {
-                    activeRole: 'WALKER',
+                    role: 'WALKER',
                     isAvailable: true,
                     baseZone: request.zone || undefined,  // Use zone instead of city
                 },

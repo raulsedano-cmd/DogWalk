@@ -33,7 +33,7 @@ export const getMessages = async (req, res) => {
                         id: true,
                         firstName: true,
                         lastName: true,
-                        activeRole: true
+                        role: true
                     }
                 }
             },
@@ -66,7 +66,7 @@ export const sendMessage = async (req, res) => {
         // Access control
         const isOwner = walkRequest.ownerId === req.user.userId;
         // Check if requester is a relevant walker
-        const isWalker = req.user.activeRole === 'WALKER'; // Simplification, strictly should check relationship
+        const isWalker = req.user.role === 'WALKER'; // Simplification, strictly should check relationship
 
         if (!isOwner && !isWalker) {
             return res.status(403).json({ error: 'Not allowed' });

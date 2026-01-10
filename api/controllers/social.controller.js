@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 // Favorites
 export const getFavorites = async (req, res) => {
     try {
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage favorites' });
         }
 
@@ -40,7 +40,7 @@ export const addFavorite = async (req, res) => {
     try {
         const { walkerId } = req.params;
 
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage favorites' });
         }
 
@@ -85,7 +85,7 @@ export const removeFavorite = async (req, res) => {
     try {
         const { walkerId } = req.params;
 
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage favorites' });
         }
 
@@ -112,7 +112,7 @@ export const removeFavorite = async (req, res) => {
 // Blocking
 export const getBlockedWalkers = async (req, res) => {
     try {
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage blocks' });
         }
 
@@ -140,7 +140,7 @@ export const blockWalker = async (req, res) => {
     try {
         const { walkerId } = req.params;
 
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage blocks' });
         }
 
@@ -193,7 +193,7 @@ export const unblockWalker = async (req, res) => {
     try {
         const { walkerId } = req.params;
 
-        if (req.user.activeRole !== 'OWNER') {
+        if (req.user.role !== 'OWNER') {
             return res.status(403).json({ error: 'Only owners can manage blocks' });
         }
 
