@@ -247,14 +247,28 @@ model WalkAssignment {
   platformFeeStatus   PlatformFeeStatus @default(DUE)
   platformFeeSettledAt DateTime?
 
+  // Route Tracking
+  routePoints     WalkRoutePoint[]
+
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
   review Review?
   photos WalkPhoto[]
   
   @@index([walkerId])
   @@index([status])
+}
+
+model WalkRoutePoint {
+  id              String         @id @default(uuid())
+  walkAssignmentId String
+  walkAssignment  WalkAssignment @relation(fields: [walkAssignmentId], references: [id])
+  latitude        Float
+  longitude       Float
+  timestamp       DateTime       @default(now())
+
+  @@index([walkAssignmentId])
 }
 
 model WalkPhoto {

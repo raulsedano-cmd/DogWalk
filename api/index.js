@@ -16,6 +16,7 @@ import walkerVerificationRoutes from './routes/walker-verification.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import walkerRoutes from './routes/walker.routes.js';
 import savedAddressesRoutes from './routes/saved-addresses.routes.js';
+import trackingRoutes from './routes/tracking.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { debugDatabase } from './controllers/debug.controller.js';
@@ -63,6 +64,7 @@ app.use('/api/dogs', dogsRoutes);
 app.use('/api/walk-requests', walkRequestsRoutes);
 app.use('/api/offers', offersRoutes);
 app.use('/api/walk-assignments', walkAssignmentsRoutes);
+app.use('/api', trackingRoutes); // Mount at root API level to match /walk-assignments/:id/location path defined in router
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/messages', messageRoutes);

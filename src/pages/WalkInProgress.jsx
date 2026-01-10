@@ -31,6 +31,7 @@ const WalkInProgress = () => {
 
     useEffect(() => {
         let interval;
+        // Timer logic
         if (assignment && assignment.actualStartTime && assignment.status === 'IN_PROGRESS') {
             const startTime = new Date(assignment.actualStartTime).getTime();
             interval = setInterval(() => {
@@ -40,6 +41,44 @@ const WalkInProgress = () => {
         }
         return () => clearInterval(interval);
     }, [assignment]);
+
+    // Live Tracking Logic (Side Effect separately to keep timer clean)
+    useEffect(() => {
+        let trackingInterval;
+
+        const sendLocation = async (lat, lng) => {
+            if (!assignment || assignment.status !== 'IN_PROGRESS') return;
+            try {
+                await api.post(`/walk-assignments/${id}/location`, { latitude: lat, longitude: lng });
+                // console.log('📍 Location sent:', lat, lng);
+            } catch (error) {
+                console.error('Error sending location:', error);
+            }
+        };
+
+        if (assignment && assignment.status === 'IN_PROGRESS') {
+            // Polling GPS every 10 seconds
+            trackingInterval = setInterval(() => {
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => sendLocation(pos.coords.latitude, pos.coords.longitude),
+                        (err) => console.warn("GPS Warn", err),
+                        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                    );
+                }
+            }, 10000);
+
+            // Initial send immediately
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendLocation(pos.coords.latitude, pos.coords.longitude),
+                    (err) => console.warn("GPS Warn", err),
+                    { enableHighAccuracy: true }
+                );
+            }
+        }
+        return () => clearInterval(trackingInterval);
+    }, [assignment, id]);
 
     const loadAssignment = async () => {
         try {

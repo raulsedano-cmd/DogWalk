@@ -15,37 +15,29 @@ async function main() {
         console.log(`WalkAssignments: ${assignmentCount}`);
 
         const assignments = await prisma.walkAssignment.findMany({
-            take: 5,
-            select: {
-                id: true,
-                status: true,
-                walkerId: true,
-                walkerArrivedAt: true
-            }
+            select: { id: true, status: true, walkerId: true, walkerArrivedAt: true }
         });
-        console.log('Sample Assignments:', assignments);
+        console.log('Assignments:', assignments);
 
         const requests = await prisma.walkRequest.findMany({
-            take: 5,
-            select: {
-                id: true,
-                status: true,
-                zone: true,
-                date: true // Check if date is in past
-            }
+            where: { status: 'OPEN' },
+            select: { id: true, zone: true, date: true, ownerId: true }
         });
-        console.log('Sample Requests:', requests);
+        console.log('Open Requests:', requests);
 
+        /*
         const users = await prisma.user.findMany({
-            where: { roles: { has: 'WALKER' } },
             select: {
                 id: true,
                 firstName: true,
-                isAvailable: true,
-                activeRole: true
+                email: true,
+                roles: true,
+                activeRole: true,
+                isAvailable: true
             }
         });
-        console.log('Walkers:', users);
+        console.log('All Users:', users);
+        */
 
     } catch (error) {
         console.error('Error connecting/querying:', error);

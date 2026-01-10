@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import Avatar from '../components/Avatar';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
 
 const mapContainerStyle = {
     width: '100%',
@@ -32,6 +32,26 @@ const WalkRequestDetail = () => {
     const [favorites, setFavorites] = useState([]);
     const [blocked, setBlocked] = useState([]);
     const [photos, setPhotos] = useState([]);
+    const [routePath, setRoutePath] = useState([]);
+
+    // Poll for route when IN_PROGRESS
+    useEffect(() => {
+        let interval;
+        if (request && request.assignment && request.assignment.status === 'IN_PROGRESS') {
+            const fetchRoute = async () => {
+                try {
+                    const res = await api.get(`/walk-assignments/${request.assignment.id}/route`);
+                    const points = res.data.map(p => ({ lat: p.latitude, lng: p.longitude }));
+                    setRoutePath(points);
+                } catch (e) {
+                    // console.error('Error fetching route:', e);
+                }
+            };
+            fetchRoute(); // Initial call
+            interval = setInterval(fetchRoute, 5000); // 5 sec poll
+        }
+        return () => clearInterval(interval);
+    }, [request]);
 
     const handleCancelAssignment = async (reason) => {
         try {
@@ -290,12 +310,12 @@ const WalkRequestDetail = () => {
                         )}
                         <p className="text-xs text-gray-500 mb-4 bg-primary-50 inline-block px-3 py-1 rounded-full">{request.zone}</p>
 
-                        {request.latitude && request.longitude && (
+                        {((request.latitude && request.longitude) || routePath.length > 0) && (
                             <div className="h-64 w-full rounded-3xl overflow-hidden border-4 border-white shadow-lg z-0 relative">
                                 {isLoaded ? (
                                     <GoogleMap
                                         mapContainerStyle={mapContainerStyle}
-                                        center={{ lat: request.latitude, lng: request.longitude }}
+                                        center={routePath.length > 0 ? routePath[routePath.length - 1] : { lat: request.latitude, lng: request.longitude }}
                                         zoom={17}
                                         options={{
                                             streetViewControl: false,
@@ -303,7 +323,23 @@ const WalkRequestDetail = () => {
                                             fullscreenControl: false,
                                         }}
                                     >
-                                        <Marker position={{ lat: request.latitude, lng: request.longitude }} />
+                                        {/* Pickup Location */}
+                                        {request.latitude && <Marker position={{ lat: request.latitude, lng: request.longitude }} label="🏠" />}
+
+                                        {/* Route Path */}
+                                        {routePath.length > 0 && (
+                                            <Polyline
+                                                path={routePath}
+                                                options={{
+                                                    strokeColor: '#3B82F6', // Blue-500
+                                                    strokeOpacity: 0.8,
+                                                    strokeWeight: 5,
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* Current Walker Pos */}
+                                        {routePath.length > 0 && <Marker position={routePath[routePath.length - 1]} label="🐕" />}
                                     </GoogleMap>
                                 ) : (
                                     <div className="h-full w-full bg-gray-200 animate-pulse flex items-center justify-center">
