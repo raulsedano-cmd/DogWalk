@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../services/prisma.js';
 import { createNotification } from './notifications.controller.js';
-
-const prisma = new PrismaClient();
 
 export const getWalkRequests = async (req, res) => {
     try {

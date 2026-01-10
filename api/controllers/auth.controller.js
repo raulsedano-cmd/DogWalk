@@ -1,9 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../services/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
-const prisma = global.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 export const register = async (req, res) => {
     try {
