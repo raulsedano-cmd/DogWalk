@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
+import { uberMapStyle } from '../helpers/mapStyles';
 
 const mapContainerStyle = {
     width: '100%',
@@ -12,16 +13,7 @@ const mapContainerStyle = {
 const mapOptions = {
     disableDefaultUI: true,
     zoomControl: false,
-    styles: [
-        { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#7c93a3" }] },
-        { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [{ "color": "#c0c0c0" }] },
-        { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#f2f2f2" }] },
-        { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] },
-        { "featureType": "poi", "elementType": "geometry.fill", "stylers": [{ "color": "#d6e9d6" }] },
-        { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] },
-        { "featureType": "road.highway", "elementType": "geometry.fill", "stylers": [{ "color": "#ffecb3" }] },
-        { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#b3d1ff" }] }
-    ]
+    styles: uberMapStyle
 };
 
 const libraries = ['places'];
@@ -292,23 +284,20 @@ const WalkInProgress = () => {
                                 <Marker
                                     position={currentPos}
                                     icon={{
-                                        path: window.google.maps.SymbolPath.CIRCLE,
-                                        fillColor: '#3B82F6',
-                                        fillOpacity: 1,
-                                        strokeWeight: 3,
-                                        strokeColor: 'white',
-                                        scale: 8,
+                                        url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png", // Icono de perro/huella profesional
+                                        scaledSize: { width: 45, height: 45 },
+                                        anchor: { x: 22, y: 22 }
                                     }}
                                 />
-                                {/* Pulsing Ring Effect (via CSS or extra circle) */}
+                                {/* Pulsing Ring Effect */}
                                 <Marker
                                     position={currentPos}
                                     icon={{
                                         path: window.google.maps.SymbolPath.CIRCLE,
                                         fillColor: '#3B82F6',
-                                        fillOpacity: 0.2,
+                                        fillOpacity: 0.15,
                                         strokeWeight: 0,
-                                        scale: 25,
+                                        scale: 30,
                                     }}
                                 />
                             </>

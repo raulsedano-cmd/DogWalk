@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
 import Avatar from '../components/Avatar';
 import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
+import { uberMapStyle } from '../helpers/mapStyles';
 
 const mapContainerStyle = {
     width: '100%',
@@ -318,13 +319,25 @@ const WalkRequestDetail = () => {
                                         center={routePath.length > 0 ? routePath[routePath.length - 1] : { lat: request.latitude, lng: request.longitude }}
                                         zoom={18}
                                         options={{
+                                            disableDefaultUI: true,
+                                            zoomControl: false,
                                             streetViewControl: false,
                                             mapTypeControl: false,
                                             fullscreenControl: false,
+                                            styles: uberMapStyle,
                                         }}
                                     >
-                                        {/* Pickup Location */}
-                                        {request.latitude && <Marker position={{ lat: request.latitude, lng: request.longitude }} label="🏠" />}
+                                        {/* Pickup Location - Professional Pin */}
+                                        {request.latitude && (
+                                            <Marker
+                                                position={{ lat: request.latitude, lng: request.longitude }}
+                                                icon={{
+                                                    url: "https://cdn-icons-png.flaticon.com/512/1239/1239525.png", // House/Pin icon
+                                                    scaledSize: { width: 40, height: 40 },
+                                                    anchor: { x: 20, y: 20 }
+                                                }}
+                                            />
+                                        )}
 
                                         {/* Route Path */}
                                         {routePath.length > 0 && (
@@ -338,15 +351,15 @@ const WalkRequestDetail = () => {
                                             />
                                         )}
 
-                                        {/* Current Walker Pos */}
+                                        {/* Current Walker Pos - Dog Icon */}
                                         {routePath.length > 0 && (
                                             <Marker
                                                 position={routePath[routePath.length - 1]}
                                                 icon={{
-                                                    url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                                                    scaledSize: { width: 40, height: 40 }
+                                                    url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png", // Dog icon
+                                                    scaledSize: { width: 45, height: 45 },
+                                                    anchor: { x: 22, y: 22 }
                                                 }}
-                                                label="🐕"
                                             />
                                         )}
                                     </GoogleMap>

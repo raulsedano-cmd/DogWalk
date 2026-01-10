@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { uberMapStyle } from '../helpers/mapStyles';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 import { getImageUrl } from '../services/api';
 
@@ -306,13 +307,25 @@ const MapContent = ({ label, lat, lng, onChange, onAddressChange }) => {
                     onClick={handleMapClick}
                     onLoad={onMapLoad}
                     options={{
+                        disableDefaultUI: true,
+                        zoomControl: false,
                         streetViewControl: false,
                         mapTypeControl: false,
                         fullscreenControl: false,
-                        zoomControl: true,
+                        styles: uberMapStyle,
                     }}
                 >
-                    {marker && <Marker position={marker} animation={window.google?.maps?.Animation?.DROP} />}
+                    {marker && (
+                        <Marker
+                            position={marker}
+                            animation={window.google?.maps?.Animation?.DROP}
+                            icon={{
+                                url: "https://cdn-icons-png.flaticon.com/512/1239/1239525.png", // House pin icon
+                                scaledSize: { width: 40, height: 40 },
+                                anchor: { x: 20, y: 20 }
+                            }}
+                        />
+                    )}
                 </GoogleMap>
             </div>
         </div>
