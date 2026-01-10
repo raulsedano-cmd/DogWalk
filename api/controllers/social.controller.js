@@ -49,7 +49,7 @@ export const addFavorite = async (req, res) => {
             where: { id: walkerId },
         });
 
-        if (!walker || !walker.roles.includes('WALKER')) {
+        if (!walker || walker.activeRole !== 'WALKER') {
             return res.status(404).json({ error: 'Walker not found' });
         }
 
@@ -149,7 +149,7 @@ export const blockWalker = async (req, res) => {
             where: { id: walkerId },
         });
 
-        if (!walker || !walker.roles.includes('WALKER')) {
+        if (!walker || walker.activeRole !== 'WALKER') {
             return res.status(404).json({ error: 'Walker not found' });
         }
 
