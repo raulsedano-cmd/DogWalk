@@ -133,25 +133,33 @@ const WalkInProgress = () => {
                         // 2. STRICTOR FILTERING (UBER LEVEL)
                         // Ignore any point from a PC or bad GPS provider (> 60m error)
                         if (accuracy > 60) return;
-
-                        // Calculate distance from last valid position to prevent "jumpy" points
-                        if (lastCoordsRef.current) {
-                            const dist = calculateDistance(
-                                lastCoordsRef.current.lat, lastCoordsRef.current.lng,
-                                latitude, longitude
-                            );
-
-                            // If user moved less than 4 meters, it's just GPS "noise" while standing still
-                            if (dist < 4) return;
-
-                            // If user "jumps" more than 300 meters, it's a glitch
-                            if (dist > 300) return;
-                        }
+                        if (accuracy > 60) return; // Ignore bad signals (PC or weak)
 
                         const newPoint = { lat: latitude, lng: longitude };
+
+                        // 3. INITIAL JUMP FILTER
+                        // If it's the first point and it's too far from the pickup point (> 200m), it's likely a PC/IP error
+                        if (!lastCoordsRef.current) {
+                            const startLat = assignment?.walkRequest?.latitude;
+                            const startLng = assignment?.walkRequest?.longitude;
+                            if (startLat && startLng) {
+                                const distFromStart = calculateDistance(latitude, longitude, startLat, startLng);
+                                if (distFromStart > 200) {
+                                    console.log("Ignoring initial GPS jump:", distFromStart, "m");
+                                    return;
+                                }
+                            }
+                        }
+
+                        if (lastCoordsRef.current) {
+                            const dist = calculateDistance(latitude, longitude, lastCoordsRef.current.lat, lastCoordsRef.current.lng);
+                            if (dist < 5) return; // Jitter filter (don't move if it's less than 5m)
+                            if (dist > 300) return; // Glitch filter (sudden jumps)
+                        }
+
                         lastCoordsRef.current = newPoint;
                         setCurrentPos(newPoint);
-                        setLocalRoute(prev => [...prev.slice(-100), newPoint]); // Store longer local route
+                        setLocalRoute(prev => [...prev.slice(-100), newPoint]);
                         sendLocation(latitude, longitude);
                     },
                     (err) => {
