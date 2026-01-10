@@ -7,7 +7,9 @@ import {
     completeAssignment,
     uploadWalkPhotos,
     getWalkPhotos,
-    markPaid
+    markPaid,
+    markArrived,
+    checkWalkReminders
 } from '../controllers/walk-assignments.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { walkPhotosUpload } from '../middleware/upload.middleware.js';
@@ -28,5 +30,9 @@ router.get('/:id/photos', authenticate, getWalkPhotos);
 
 // Payments (Owner confirms external payment)
 router.put('/:id/mark-paid', authenticate, markPaid);
+
+// Lifecycle Enhancements
+router.put('/:id/arrived', authenticate, markArrived);
+router.post('/cron/reminders', checkWalkReminders); // Unprotected for Cron/Testing (add secret in prod)
 
 export default router;

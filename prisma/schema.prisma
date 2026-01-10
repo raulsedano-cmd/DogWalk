@@ -220,6 +220,7 @@ model WalkAssignment {
   status          WalkAssignmentStatus @default(PENDING)
   actualStartTime DateTime?
   actualEndTime   DateTime?
+  walkerArrivedAt DateTime?
   actualDurationMinutes Int?
   
   // Walk Report
@@ -381,6 +382,8 @@ enum NotificationType {
   WALK_STARTED
   WALK_COMPLETED
   REVIEW_RECEIVED
+  WALKER_ARRIVED
+  WALK_REMINDER
 }
 
 enum EnergyLevel {

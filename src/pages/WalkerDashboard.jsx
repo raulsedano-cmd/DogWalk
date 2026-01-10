@@ -144,6 +144,20 @@ const WalkerDashboard = () => {
         }
     };
 
+    const handleArrived = async (assignmentId) => {
+        try {
+            await api.put(`/walk-assignments/${assignmentId}/arrived`);
+            // Update local state
+            setMyAssignments(prev => prev.map(a =>
+                a.id === assignmentId ? { ...a, walkerArrivedAt: new Date().toISOString() } : a
+            ));
+            alert("¡Llegada notificada al dueño! 🏠");
+        } catch (error) {
+            console.error(error);
+            alert("Error al notificar llegada");
+        }
+    };
+
     const pendingAssignments = myAssignments.filter(a => a.status === 'PENDING' || a.status === 'IN_PROGRESS');
     const completedAssignments = myAssignments.filter(a => a.status === 'COMPLETED');
 
@@ -358,7 +372,6 @@ const WalkerDashboard = () => {
                                 key={assignment.id}
                                 className="card border-l-4 border-l-walker-500 cursor-pointer hover:shadow-md transition-shadow"
                                 onClick={(e) => {
-                                    // Prevent navigation if clicking on buttons
                                     if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
                                         navigate(`/walk-requests/${assignment.walkRequestId}`);
                                     }
@@ -374,16 +387,30 @@ const WalkerDashboard = () => {
                                 </p>
 
                                 {assignment.status === 'PENDING' ? (
-                                    <button
-                                        onClick={() => handleUpdateAssignment(assignment.id, 'IN_PROGRESS')}
-                                        className="btn-primary w-full mt-2 bg-green-600 hover:bg-green-700"
-                                    >
-                                        🚀 Iniciar Paseo
-                                    </button>
+                                    !assignment.walkerArrivedAt ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleArrived(assignment.id); }}
+                                            className="btn-primary w-full mt-2 bg-blue-600 hover:bg-blue-700 flex justify-center items-center gap-2"
+                                        >
+                                            📍 Ya llegué
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-2 mt-2">
+                                            <div className="p-2 bg-blue-50 text-blue-800 text-xs rounded text-center animate-pulse">
+                                                ✅ Notificado. Esperando al dueño...
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleUpdateAssignment(assignment.id, 'IN_PROGRESS'); }}
+                                                className="btn-primary w-full bg-green-600 hover:bg-green-700 flex justify-center items-center gap-2"
+                                            >
+                                                🐕 Ya recogí al perro
+                                            </button>
+                                        </div>
+                                    )
                                 ) : (
                                     <button
                                         onClick={() => navigate(`/walk-assignments/${assignment.id}/in-progress`)}
-                                        className="btn-primary w-full mt-2 bg-blue-600 hover:bg-blue-700"
+                                        className="btn-primary w-full mt-2 bg-indigo-600 hover:bg-indigo-700"
                                     >
                                         📱 Gestionar Paseo
                                     </button>

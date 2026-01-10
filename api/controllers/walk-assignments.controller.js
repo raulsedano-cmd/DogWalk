@@ -456,6 +456,115 @@ export const getWalkerPayments = async (req, res) => {
     }
 };
 
+// ... existing functions ...
+
+export const markArrived = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const assignment = await prisma.walkAssignment.findUnique({
+            where: { id },
+            include: { walkRequest: { include: { owner: true } } }
+        });
+
+        if (!assignment) return res.status(404).json({ error: 'Asignación no encontrada' });
+        if (assignment.walkerId !== req.user.userId) return res.status(403).json({ error: 'No autorizado' });
+
+        // Update arrived timestamp
+        await prisma.walkAssignment.update({
+            where: { id },
+            data: { walkerArrivedAt: new Date() }
+        });
+
+        // Notify Owner
+        await createNotification({
+            userId: assignment.walkRequest.ownerId,
+            type: 'WALKER_ARRIVED',
+            title: '¡El paseador ha llegado! 📍',
+            message: `Tu paseador ya está en el punto de encuentro. Por favor, entrega a tu mascota.`,
+            link: `/walk-assignments/${id}/track`
+        });
+
+        res.json({ message: 'Llegada notificada' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al marcar llegada' });
+    }
+};
+
+export const checkWalkReminders = async (req, res) => {
+    // This endpoint should be called by a CRON job every 5 minutes
+    try {
+        const now = new Date();
+        const assignments = await prisma.walkAssignment.findMany({
+            where: { status: 'PENDING' },
+            include: { walkRequest: true }
+        });
+
+        let notificationsSent = 0;
+
+        for (const assignment of assignments) {
+            // Calculate start time
+            const date = new Date(assignment.walkRequest.date);
+            const [hours, minutes] = assignment.walkRequest.startTime.split(':');
+            const startDateTime = new Date(date);
+            startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const diffMinutes = (startDateTime - now) / 60000;
+
+            // 30 Minute Reminder (Window: 25-35 min)
+            if (diffMinutes >= 25 && diffMinutes <= 35) {
+                const alreadySent = await prisma.notification.findFirst({
+                    where: {
+                        userId: assignment.walkerId,
+                        type: 'WALK_REMINDER',
+                        message: { contains: '30 minutos' },
+                        createdAt: { gte: new Date(now.getTime() - 20 * 60000) } // Check last 20 mins
+                    }
+                });
+
+                if (!alreadySent) {
+                    await createNotification({
+                        userId: assignment.walkerId,
+                        type: 'WALK_REMINDER',
+                        title: '⏰ Tu paseo comienza en 30 min',
+                        message: 'Recuerda que llegar tarde afecta tu calificación. ¡Prepárate!',
+                        link: `/walker/dashboard`
+                    });
+                    notificationsSent++;
+                }
+            }
+
+            // 10 Minute Reminder (Window: 5-15 min)
+            if (diffMinutes >= 5 && diffMinutes <= 15) {
+                const alreadySent = await prisma.notification.findFirst({
+                    where: {
+                        userId: assignment.walkerId,
+                        type: 'WALK_REMINDER',
+                        message: { contains: '10 minutos' },
+                        createdAt: { gte: new Date(now.getTime() - 10 * 60000) }
+                    }
+                });
+
+                if (!alreadySent) {
+                    await createNotification({
+                        userId: assignment.walkerId,
+                        type: 'WALK_REMINDER',
+                        title: '🚀 Tu paseo comienza en 10 min',
+                        message: '¡Ya deberías estar cerca! Marca "Ya llegué" cuando estés en el punto.',
+                        link: `/walker/dashboard`
+                    });
+                    notificationsSent++;
+                }
+            }
+        }
+
+        res.json({ message: `Checked assignments. Sent ${notificationsSent} reminders.` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error checking reminders' });
+    }
+};
+
 export const settlePlatformFees = async (req, res) => {
     try {
         const { assignmentIds } = req.body;
