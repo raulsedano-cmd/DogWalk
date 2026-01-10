@@ -51,6 +51,10 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'Dog Walking API is running' });
 });
 
+// Temporary debug route
+import { debugDatabase } from './controllers/debug.controller.js';
+app.get('/api/debug-db', debugDatabase);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);

@@ -17,12 +17,12 @@ async function main() {
         for (const table of tables) {
             console.log(`\nTable: ${table}`);
             const columns = await prisma.$queryRawUnsafe(`
-                SELECT column_name, data_type 
+                SELECT table_schema, column_name, data_type 
                 FROM information_schema.columns 
-                WHERE table_name = '${table}'
-                ORDER BY column_name
+                WHERE table_name = '${table}' AND column_name LIKE '%role%'
+                ORDER BY table_schema, column_name
             `);
-            columns.forEach(c => console.log(`- ${c.column_name}: ${c.data_type}`));
+            columns.forEach(c => console.log(`[${c.table_schema}] - ${c.column_name}: ${c.data_type}`));
         }
     } catch (e) {
         console.error('Audit Error:', e);
