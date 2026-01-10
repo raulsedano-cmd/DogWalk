@@ -120,6 +120,7 @@ export const getWalkRequests = async (req, res) => {
 export const getWalkRequestById = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('Fetching walk request:', id);
 
         const request = await prisma.walkRequest.findUnique({
             where: { id },
@@ -133,7 +134,7 @@ export const getWalkRequestById = async (req, res) => {
                         phone: true,
                         city: true,
                         zone: true,
-                        profilePhotoUrl: true, // Enhanced
+                        profilePhotoUrl: true,
                     },
                 },
                 offers: {
@@ -145,8 +146,8 @@ export const getWalkRequestById = async (req, res) => {
                                 lastName: true,
                                 averageRating: true,
                                 bio: true,
-                                profilePhotoUrl: true, // Enhanced
-                                isVerifiedWalker: true, // Enhanced
+                                profilePhotoUrl: true,
+                                isVerifiedWalker: true,
                             },
                         },
                     },
@@ -170,13 +171,23 @@ export const getWalkRequestById = async (req, res) => {
         });
 
         if (!request) {
+            console.log('Walk request not found:', id);
             return res.status(404).json({ error: 'Walk request not found' });
         }
 
+        console.log('Walk request loaded successfully:', id);
         res.json(request);
     } catch (error) {
         console.error('Get walk request error:', error);
-        res.status(500).json({ error: 'Failed to get walk request' });
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            meta: error.meta
+        });
+        res.status(500).json({
+            error: 'Failed to get walk request',
+            details: process.env.NODE_ENV === 'production' ? undefined : error.message
+        });
     }
 };
 
