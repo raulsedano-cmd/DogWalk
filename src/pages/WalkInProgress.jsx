@@ -284,9 +284,9 @@ const WalkInProgress = () => {
                                 <Marker
                                     position={currentPos}
                                     icon={{
-                                        url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png", // Icono de perro/huella profesional
-                                        scaledSize: { width: 45, height: 45 },
-                                        anchor: { x: 22, y: 22 }
+                                        url: "https://img.icons8.com/ios-filled/100/3B82F6/dog.png", // Perro azul profesional
+                                        scaledSize: { width: 40, height: 40 },
+                                        anchor: { x: 20, y: 20 }
                                     }}
                                 />
                                 {/* Pulsing Ring Effect */}

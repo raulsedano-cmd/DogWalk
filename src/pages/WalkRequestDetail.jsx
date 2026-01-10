@@ -332,9 +332,9 @@ const WalkRequestDetail = () => {
                                             <Marker
                                                 position={{ lat: request.latitude, lng: request.longitude }}
                                                 icon={{
-                                                    url: "https://cdn-icons-png.flaticon.com/512/1239/1239525.png", // House/Pin icon
+                                                    url: "https://img.icons8.com/ios-filled/100/000000/marker.png", // Pin negro elegante
                                                     scaledSize: { width: 40, height: 40 },
-                                                    anchor: { x: 20, y: 20 }
+                                                    anchor: { x: 20, y: 40 }
                                                 }}
                                             />
                                         )}
@@ -361,9 +361,9 @@ const WalkRequestDetail = () => {
                                                         : { lat: request.assignment.walker.latitude, lng: request.assignment.walker.longitude }
                                                     }
                                                     icon={{
-                                                        url: "https://cdn-icons-png.flaticon.com/512/3462/3462251.png",
-                                                        scaledSize: { width: 45, height: 45 },
-                                                        anchor: { x: 22, y: 22 }
+                                                        url: "https://img.icons8.com/ios-filled/100/3B82F6/dog.png", // Perro azul profesional
+                                                        scaledSize: { width: 40, height: 40 },
+                                                        anchor: { x: 20, y: 20 }
                                                     }}
                                                     zIndex={100}
                                                 />
