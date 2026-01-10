@@ -39,6 +39,9 @@ const WalkInProgress = () => {
         reportNotes: '',
         earlyEndReason: ''
     });
+    const [isLowAccuracy, setIsLowAccuracy] = useState(false);
+    const [signalQuality, setSignalQuality] = useState('BUSCANDO'); // 'Pobre', 'Buena', 'Excelente'
+    const lastCoordsRef = useRef(null);
 
     useEffect(() => {
         loadAssignment();
@@ -57,16 +60,29 @@ const WalkInProgress = () => {
         return () => clearInterval(interval);
     }, [assignment]);
 
-    // Live Tracking Logic (Improved with watchPosition)
+    // Live Tracking Logic (Pro-Style: Distance & Accuracy Filters)
     useEffect(() => {
         let watchId;
         let lastSentTime = 0;
 
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        };
+
         const sendLocation = async (lat, lng) => {
             if (!assignment || assignment.status !== 'IN_PROGRESS') return;
             try {
-                // Throttle server updates to every 7 seconds to avoid noise, but keep local map real-time
                 const now = Date.now();
+                // Send if at least 7 seconds passed
                 if (now - lastSentTime > 7000) {
                     await api.post(`/walk-assignments/${id}/location`, { latitude: lat, longitude: lng });
                     lastSentTime = now;
@@ -76,28 +92,60 @@ const WalkInProgress = () => {
             }
         };
 
-        watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const { latitude, longitude, accuracy } = pos.coords;
+        if (assignment && assignment.status === 'IN_PROGRESS') {
+            if ('geolocation' in navigator) {
+                watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const { latitude, longitude, accuracy } = pos.coords;
 
-                // Solo aceptar posiciones con precisión menor a 100 metros para evitar saltos locos
-                if (accuracy > 100) return;
+                        // 1. DYNAMIC QUALITY INDICATOR
+                        if (accuracy > 100) {
+                            setSignalQuality('POBRE');
+                            setIsLowAccuracy(true);
+                        } else if (accuracy > 40) {
+                            setSignalQuality('BUENA');
+                            setIsLowAccuracy(false);
+                        } else {
+                            setSignalQuality('EXCELENTE');
+                            setIsLowAccuracy(false);
+                        }
 
-                const newPoint = { lat: latitude, lng: longitude };
-                setCurrentPos(newPoint);
-                setLocalRoute(prev => [...prev.slice(-50), newPoint]);
-                sendLocation(latitude, longitude);
-            },
-            (err) => {
-                if (err.code === 1) alert("⚠️ Error: Permiso de GPS denegado. Actívalo para que el dueño pueda seguirte.");
-                console.warn("GPS Warn", err);
-            },
-            {
-                enableHighAccuracy: true, // Forzar GPS satelital
-                timeout: 10000,
-                maximumAge: 0
+                        // 2. STRICTOR FILTERING (UBER LEVEL)
+                        // Ignore any point from a PC or bad GPS provider (> 60m error)
+                        if (accuracy > 60) return;
+
+                        // Calculate distance from last valid position to prevent "jumpy" points
+                        if (lastCoordsRef.current) {
+                            const dist = calculateDistance(
+                                lastCoordsRef.current.lat, lastCoordsRef.current.lng,
+                                latitude, longitude
+                            );
+
+                            // If user moved less than 4 meters, it's just GPS "noise" while standing still
+                            if (dist < 4) return;
+
+                            // If user "jumps" more than 300 meters, it's a glitch
+                            if (dist > 300) return;
+                        }
+
+                        const newPoint = { lat: latitude, lng: longitude };
+                        lastCoordsRef.current = newPoint;
+                        setCurrentPos(newPoint);
+                        setLocalRoute(prev => [...prev.slice(-100), newPoint]); // Store longer local route
+                        sendLocation(latitude, longitude);
+                    },
+                    (err) => {
+                        setSignalQuality('SIN SEÑAL');
+                        if (err.code === 1) alert("⚠️ El GPS es obligatorio para rastrear el paseo. Por favor actívalo.");
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
             }
-        );
+        }
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
         };
@@ -251,12 +299,22 @@ const WalkInProgress = () => {
                         </div>
                     )}
                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-primary-700 shadow-sm flex items-center gap-1">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                        RASTREO EN VIVO
+                        <span className={`w-2 h-2 rounded-full ${signalQuality === 'EXCELENTE' ? 'bg-green-500' : signalQuality === 'BUENA' ? 'bg-yellow-500' : 'bg-red-500'} animate-ping`}></span>
+                        CALIDAD GPS: {signalQuality}
                     </div>
                     {currentPos && (
                         <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl text-[9px] font-mono text-white/80">
                             {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
+                        </div>
+                    )}
+                    {isLowAccuracy && (
+                        <div className="absolute inset-0 bg-red-600/90 flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
+                            <span className="text-4xl mb-2">⚠️</span>
+                            <p className="text-white font-black text-sm uppercase mb-1">Señal de GPS Débil</p>
+                            <p className="text-white/80 text-[10px] leading-relaxed max-w-[200px]">
+                                Tu dispositivo actual está dando una ubicación poco precisa. Para un rastreo correcto,
+                                <span className="text-white font-black italic"> usa la aplicación en tu celular</span>.
+                            </p>
                         </div>
                     )}
                 </div>
