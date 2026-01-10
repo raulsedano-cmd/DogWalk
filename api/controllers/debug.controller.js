@@ -30,6 +30,22 @@ export const debugDatabase = async (req, res) => {
             ORDER BY column_name
         `);
 
+        // 4. Check Notification table columns
+        const notificationColumns = await prisma.$queryRawUnsafe(`
+            SELECT column_name, data_type, table_schema
+            FROM information_schema.columns 
+            WHERE table_name = 'Notification'
+            ORDER BY column_name
+        `);
+
+        // 5. Check Offer table columns
+        const offerColumns = await prisma.$queryRawUnsafe(`
+            SELECT column_name, data_type, table_schema
+            FROM information_schema.columns 
+            WHERE table_name = 'Offer'
+            ORDER BY column_name
+        `);
+
         // 3. Get a sample user (sanitized)
         const sampleUser = await prisma.$queryRawUnsafe(`
             SELECT * FROM "User" LIMIT 1
@@ -55,6 +71,8 @@ export const debugDatabase = async (req, res) => {
             userTableColumns: userColumns,
             walkRequestTableColumns: walkRequestColumns,
             walkAssignmentTableColumns: walkAssignmentColumns,
+            notificationTableColumns: notificationColumns,
+            offerTableColumns: offerColumns,
             sampleUserAnalysis: sanitizedUser,
             roleColumnExists: userColumns.some(c => c.column_name === 'role'),
             activeRoleColumnExists: userColumns.some(c => c.column_name === 'activeRole')

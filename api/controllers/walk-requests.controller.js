@@ -181,7 +181,15 @@ export const getWalkRequestById = async (req, res) => {
         res.json(request);
     } catch (error) {
         console.error('Get walk request error:', error);
-        res.status(500).json({ error: 'Failed to get walk request' });
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            meta: error.meta
+        });
+        res.status(500).json({
+            error: 'Failed to get walk request',
+            details: process.env.NODE_ENV === 'production' ? undefined : error.message
+        });
     }
 };
 
