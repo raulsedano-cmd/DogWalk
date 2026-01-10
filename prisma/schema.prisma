@@ -230,21 +230,21 @@ model WalkAssignment {
   earlyEndReason  String?   @db.Text
 
   // Cancellation
-  cancelledBy     String?   // WALKER, OWNER
-  cancelReason    String?   @db.Text
-  cancelledAt     DateTime?
+  // cancelledBy     String?   // WALKER, OWNER
+  // cancelReason    String?   @db.Text
+  // cancelledAt     DateTime?
 
   // Payment Tracking (External)
   agreedPrice     Float
-  paymentMethod   PaymentMethod @default(OTHER)
+  // paymentMethod   PaymentMethod @default(OTHER)
   paymentStatus   PaymentStatus @default(UNPAID)
-  paidAt          DateTime?
+  // paidAt          DateTime?
 
   // Platform Commission
-  platformFeeRate     Float             @default(0.15)
-  platformFeeAmount   Float             @default(0)
-  platformFeeStatus   PlatformFeeStatus @default(DUE)
-  platformFeeSettledAt DateTime?
+  // platformFeeRate     Float             @default(0.15)
+  // platformFeeAmount   Float             @default(0)
+  // platformFeeStatus   PlatformFeeStatus @default(DUE)
+  // platformFeeSettledAt DateTime?
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
