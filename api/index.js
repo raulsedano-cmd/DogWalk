@@ -16,6 +16,7 @@ import walkerVerificationRoutes from './routes/walker-verification.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import walkerRoutes from './routes/walker.routes.js';
 import savedAddressesRoutes from './routes/saved-addresses.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { debugDatabase } from './controllers/debug.controller.js';
 
@@ -71,6 +72,7 @@ app.use('/api/walker-verification', walkerVerificationRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/walker', walkerRoutes);
 app.use('/api/saved-addresses', savedAddressesRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

@@ -1,0 +1,98 @@
+import { useState, useEffect } from 'react';
+import api, { getImageUrl } from '../services/api';
+
+const AdminDashboard = () => {
+    const [verifications, setVerifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadVerifications();
+    }, []);
+
+    const loadVerifications = async () => {
+        try {
+            const res = await api.get('/admin/verifications');
+            setVerifications(res.data);
+        } catch (error) {
+            console.error(error);
+            alert('Error cargando verificaciones. ¿Tienes permisos?');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerify = async (userId) => {
+        if (!confirm('¿Aprobar y verificar a este paseador?')) return;
+        try {
+            await api.put(`/admin/verify/${userId}`);
+            alert('Paseador aprobado');
+            loadVerifications();
+        } catch (error) {
+            alert('Error al verificar');
+        }
+    };
+
+    const handleReject = async (userId) => {
+        if (!confirm('¿Rechazar solicitud?')) return;
+        try {
+            await api.put(`/admin/reject/${userId}`);
+            alert('Solicitud rechazada');
+            loadVerifications();
+        } catch (error) {
+            alert('Error al rechazar');
+        }
+    };
+
+    if (loading) return <div className="p-8">Cargando admin...</div>;
+
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-black mb-8 text-gray-800">🕵️ Admin Dashboard - Verificaciones</h1>
+
+            <div className="grid gap-6">
+                {verifications.length === 0 ? (
+                    <p>No hay verificaciones pendientes.</p>
+                ) : (
+                    verifications.map(v => (
+                        <div key={v.id} className="card border-2 border-gray-100 flex flex-col md:flex-row gap-6">
+                            <div className="flex-1">
+                                <h3 className="font-bold text-xl">{v.firstName} {v.lastName}</h3>
+                                <p className="text-sm text-gray-500 mb-2">{v.email}</p>
+                                <p className="font-mono bg-yellow-50 inline-block px-2 py-1 rounded text-sm mb-4">
+                                    DNI: {v.dniNumber}
+                                </p>
+                                <p className="text-xs text-gray-400">Registrado: {new Date(v.createdAt).toLocaleDateString()}</p>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <div className="text-center">
+                                    <p className="text-xs font-bold mb-1">Frente</p>
+                                    <a href={getImageUrl(v.dniFrontPhotoUrl)} target="_blank" rel="noreferrer">
+                                        <img src={getImageUrl(v.dniFrontPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-150 transition-transform origin-bottom-right" />
+                                    </a>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-bold mb-1">Dorso</p>
+                                    <a href={getImageUrl(v.dniBackPhotoUrl)} target="_blank" rel="noreferrer">
+                                        <img src={getImageUrl(v.dniBackPhotoUrl)} className="w-32 h-20 object-cover rounded-lg border hover:scale-150 transition-transform origin-bottom-right" />
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col justify-center gap-2">
+                                <button onClick={() => handleVerify(v.id)} className="bg-green-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-green-700">
+                                    ✅ Aprobar
+                                </button>
+                                <button onClick={() => handleReject(v.id)} className="bg-red-100 text-red-600 px-6 py-2 rounded-xl font-bold hover:bg-red-200">
+                                    🚫 Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default AdminDashboard;

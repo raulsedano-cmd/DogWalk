@@ -26,6 +26,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 import RoleSelection from './pages/RoleSelection';
 import SavedAddresses from './pages/SavedAddresses';
+import AdminDashboard from './pages/AdminDashboard';
 
 const HomeRoute = () => {
     const { isAuthenticated, user } = useAuth();
@@ -233,6 +234,7 @@ function App() {
                                                 </ProtectedRoute>
                                             }
                                         />
+                                        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                                         <Route path="*" element={<Navigate to="/" replace />} />
                                     </Routes>
                                 </main>
