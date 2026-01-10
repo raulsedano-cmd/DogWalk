@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 const WalkerDashboard = () => {
-    const { user, setUser } = useAuth();
+    const { user, updateUser } = useAuth();
     const [assignments, setAssignments] = useState([]);
     const [availableRequests, setAvailableRequests] = useState([]);
     const [stats, setStats] = useState({ totalWalks: 0, rating: 5, earnings: 0 });
@@ -46,7 +46,7 @@ const WalkerDashboard = () => {
         setAvailabilityLoading(true);
         try {
             const response = await api.put('/users/availability', { isAvailable: !user.isAvailable });
-            setUser({ ...user, isAvailable: response.data.isAvailable });
+            updateUser({ isAvailable: response.data.isAvailable });
             // Reload requests if we just became available
             if (!user.isAvailable) {
                 loadData();
