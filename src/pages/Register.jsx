@@ -54,7 +54,6 @@ const Register = () => {
 
         try {
             await register(formData);
-            // Optionally auto-accept terms on backend or let the redirect handle it
             navigate(formData.role === 'OWNER' ? '/owner/dashboard' : '/walker/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'Error al registrar usuario');
@@ -64,193 +63,101 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 text-gray-800">
-            <div className="max-w-md w-full animate-in fade-in duration-500">
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-4">🐕</div>
-                    <h2 className="text-3xl font-black text-gray-900">Crear Cuenta</h2>
-                    <p className="mt-2 text-gray-600 font-medium">
-                        Únete a DogWalk como <span className="text-primary-600 uppercase font-bold">{formData.role === 'OWNER' ? 'Dueño' : 'Paseador'}</span>
-                    </p>
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFEFE] py-16 px-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-500/[0.03] rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
+
+            <div className="max-w-xl w-full relative z-10 animate-fadeIn">
+                <div className="text-center mb-10 space-y-3">
+                    <Link to="/" className="inline-flex items-center gap-2 group mb-4">
+                        <div className="w-10 h-10 bg-navy-900 rounded-[12px] flex items-center justify-center text-xl shadow-lg shadow-navy-500/10 group-hover:rotate-12 transition-transform text-white">🐕</div>
+                        <span className="text-xl font-black text-navy-900 tracking-tighter uppercase">DogWalk <span className="text-primary-600">Pro</span></span>
+                    </Link>
+                    <h2 className="text-4xl lg:text-5xl font-black text-navy-900 tracking-tight leading-[0.9] uppercase italic">
+                        Únete.
+                    </h2>
+                    <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.4em]">Inicia como {formData.role === 'OWNER' ? 'Dueño' : 'Paseador Pro'}</p>
                 </div>
 
-                <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+                <div className="card-premium !p-10">
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm font-medium rounded-r-lg">
-                            {error}
+                        <div className="mb-6 px-5 py-3.5 bg-red-50 border border-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest rounded-[12px]">
+                            ⚠️ {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* ... Existing fields remain same, wrapping with premium styles if possible but keeping logic ... */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Nombre
-                                </label>
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    required
-                                    className="input-field"
-                                    value={formData.firstName}
-                                    onChange={handleChange}
-                                    autoComplete="given-name"
-                                />
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Nombre</label>
+                                <input type="text" name="firstName" required className="input-field" placeholder="Ej: María" value={formData.firstName} onChange={handleChange} />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Apellido
-                                </label>
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    required
-                                    className="input-field"
-                                    value={formData.lastName}
-                                    onChange={handleChange}
-                                    autoComplete="family-name"
-                                />
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Apellido</label>
+                                <input type="text" name="lastName" required className="input-field" placeholder="Ej: García" value={formData.lastName} onChange={handleChange} />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                required
-                                className="input-field"
-                                value={formData.email}
-                                onChange={handleChange}
-                                autoComplete="email"
-                            />
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Email</label>
+                            <input type="email" name="email" required className="input-field" placeholder="tu@email.com" value={formData.email} onChange={handleChange} />
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Teléfono
-                            </label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                required
-                                className="input-field"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                placeholder="Ej: 999 999 999"
-                                autoComplete="tel"
-                            />
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Teléfono</label>
+                            <input type="tel" name="phone" required className="input-field" value={formData.phone} onChange={handleChange} placeholder="999 999 999" />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Ciudad
-                                </label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    required
-                                    className="input-field"
-                                    value={formData.city}
-                                    onChange={handleChange}
-                                />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Ciudad</label>
+                                <input type="text" name="city" required className="input-field" placeholder="Ej: Lima" value={formData.city} onChange={handleChange} />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Zona
-                                </label>
-                                <input
-                                    type="text"
-                                    name="zone"
-                                    required
-                                    className="input-field"
-                                    value={formData.zone}
-                                    onChange={handleChange}
-                                />
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Zona</label>
+                                <input type="text" name="zone" required className="input-field" placeholder="Ej: Miraflores" value={formData.zone} onChange={handleChange} />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Contraseña
-                                </label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    required
-                                    className="input-field"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    autoComplete="new-password"
-                                />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Password</label>
+                                <input type="password" name="password" required className="input-field" value={formData.password} onChange={handleChange} />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                    Confirmar
-                                </label>
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    required
-                                    className="input-field"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    autoComplete="new-password"
-                                />
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Confirmar</label>
+                                <input type="password" name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleChange} />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Soy
-                            </label>
-                            <select
-                                name="role"
-                                className="input-field font-bold"
-                                value={formData.role}
-                                onChange={handleChange}
-                            >
-                                <option value="OWNER">Dueño de Perro</option>
-                                <option value="WALKER">Paseador</option>
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Perfil</label>
+                            <select name="role" className="input-field font-black uppercase text-[10px] tracking-widest bg-white" value={formData.role} onChange={handleChange}>
+                                <option value="OWNER">Dueño de Mascota</option>
+                                <option value="WALKER">Paseador Pro</option>
                             </select>
                         </div>
 
                         <div className="pt-2">
                             <label className="flex items-start gap-3 cursor-pointer group">
-                                <input
-                                    type="checkbox"
-                                    className="mt-1 w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                                    checked={acceptTerms}
-                                    onChange={(e) => setAcceptTerms(e.target.checked)}
-                                />
-                                <span className="text-gray-500 text-xs leading-relaxed group-hover:text-gray-700 transition-colors">
-                                    Declaro haber leído y aceptado los <Link to="/terminos-y-condiciones" target="_blank" className="text-primary-600 font-bold hover:underline">Términos y Condiciones</Link> y el <strong>Deslinde de Responsabilidad</strong> de DogWalk.
+                                <input type="checkbox" className="mt-1 w-4 h-4 rounded-[5px] border-slate-100 text-primary-600 focus:ring-primary-500/20" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
+                                <span className="text-slate-400 text-[9px] font-bold leading-relaxed uppercase tracking-widest group-hover:text-navy-900 transition-colors">
+                                    Acepto los <Link to="/terminos-y-condiciones" target="_blank" className="text-primary-600 font-black underline underline-offset-2">Términos</Link> oficiales.
                                 </span>
                             </label>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading || !acceptTerms}
-                            className={`w-full py-4 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95 ${acceptTerms && !loading
-                                ? 'bg-primary-600 text-white hover:bg-primary-700'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                }`}
-                        >
-                            {loading ? 'Registrando...' : 'CREAR CUENTA'}
+                        <button type="submit" disabled={loading || !acceptTerms} className={`w-full py-4 rounded-[16px] font-black text-sm transition-all shadow-xl active:scale-95 ${acceptTerms && !loading ? 'bg-navy-900 text-white hover:bg-black shadow-navy-500/10' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>
+                            {loading ? 'Creando...' : 'REGISTRARME 🚀'}
                         </button>
                     </form>
 
-                    <div className="mt-4 text-center text-sm text-gray-600">
-                        ¿Ya tienes cuenta?{' '}
-                        <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-                            Inicia sesión
-                        </Link>
+                    <div className="mt-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        ¿Ya eres miembro?{' '}
+                        <Link to="/login" className="text-primary-600 hover:text-navy-900 transition-colors">Iniciar sesión</Link>
+                    </div>
+
+                    <div className="my-8 h-px bg-slate-100 relative">
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[8px] font-black text-slate-300 uppercase tracking-widest">Social</span>
                     </div>
 
                     <SocialLogin />

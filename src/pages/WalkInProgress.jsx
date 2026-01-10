@@ -47,7 +47,7 @@ const WalkInProgress = () => {
         earlyEndReason: ''
     });
     const [isLowAccuracy, setIsLowAccuracy] = useState(false);
-    const [signalQuality, setSignalQuality] = useState('BUSCANDO'); // 'Pobre', 'Buena', 'Excelente'
+    const [signalQuality, setSignalQuality] = useState('BUSCANDO');
     const lastCoordsRef = useRef(null);
     const [isFollowing, setIsFollowing] = useState(true);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -69,7 +69,6 @@ const WalkInProgress = () => {
 
     useEffect(() => {
         let interval;
-        // Timer logic
         if (assignment && assignment.actualStartTime && assignment.status === 'IN_PROGRESS') {
             const startTime = new Date(assignment.actualStartTime).getTime();
             interval = setInterval(() => {
@@ -80,13 +79,12 @@ const WalkInProgress = () => {
         return () => clearInterval(interval);
     }, [assignment]);
 
-    // Live Tracking Logic (Pro-Style: Distance & Accuracy Filters)
     useEffect(() => {
         let watchId;
         let lastSentTime = 0;
 
         const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371e3; // metres
+            const R = 6371e3;
             const φ1 = lat1 * Math.PI / 180;
             const φ2 = lat2 * Math.PI / 180;
             const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -102,7 +100,6 @@ const WalkInProgress = () => {
             if (!assignment || assignment.status !== 'IN_PROGRESS') return;
             try {
                 const now = Date.now();
-                // Send if at least 7 seconds passed
                 if (now - lastSentTime > 7000) {
                     await api.post(`/walk-assignments/${id}/location`, { latitude: lat, longitude: lng });
                     lastSentTime = now;
@@ -118,7 +115,6 @@ const WalkInProgress = () => {
                     (pos) => {
                         const { latitude, longitude, accuracy } = pos.coords;
 
-                        // 1. DYNAMIC QUALITY INDICATOR
                         if (accuracy > 100) {
                             setSignalQuality('POBRE');
                             setIsLowAccuracy(true);
@@ -130,31 +126,23 @@ const WalkInProgress = () => {
                             setIsLowAccuracy(false);
                         }
 
-                        // 2. STRICTOR FILTERING (UBER LEVEL)
-                        // Ignore any point from a PC or bad GPS provider (> 60m error)
                         if (accuracy > 60) return;
-                        if (accuracy > 60) return; // Ignore bad signals (PC or weak)
 
                         const newPoint = { lat: latitude, lng: longitude };
 
-                        // 3. INITIAL JUMP FILTER
-                        // If it's the first point and it's too far from the pickup point (> 200m), it's likely a PC/IP error
                         if (!lastCoordsRef.current) {
                             const startLat = assignment?.walkRequest?.latitude;
                             const startLng = assignment?.walkRequest?.longitude;
                             if (startLat && startLng) {
                                 const distFromStart = calculateDistance(latitude, longitude, startLat, startLng);
-                                if (distFromStart > 200) {
-                                    console.log("Ignoring initial GPS jump:", distFromStart, "m");
-                                    return;
-                                }
+                                if (distFromStart > 200) return;
                             }
                         }
 
                         if (lastCoordsRef.current) {
                             const dist = calculateDistance(latitude, longitude, lastCoordsRef.current.lat, lastCoordsRef.current.lng);
-                            if (dist < 5) return; // Jitter filter (don't move if it's less than 5m)
-                            if (dist > 300) return; // Glitch filter (sudden jumps)
+                            if (dist < 3) return;
+                            if (dist > 300) return;
                         }
 
                         lastCoordsRef.current = newPoint;
@@ -164,13 +152,8 @@ const WalkInProgress = () => {
                     },
                     (err) => {
                         setSignalQuality('SIN SEÑAL');
-                        if (err.code === 1) alert("⚠️ El GPS es obligatorio para rastrear el paseo. Por favor actívalo.");
                     },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             }
         }
@@ -183,20 +166,13 @@ const WalkInProgress = () => {
         try {
             const response = await api.get(`/walk-assignments/${id}`);
             const data = response.data;
-
-            if (data.walkerId !== user.id) {
-                alert("Acceso denegado");
-                return navigate('/my-walks');
-            }
-
+            if (data.walkerId !== user.id) return navigate('/walker/dashboard');
             if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
                 return navigate(`/walk-requests/${data.walkRequestId}`);
             }
-
             setAssignment(data);
         } catch (error) {
-            console.error(error);
-            navigate('/my-walks');
+            navigate('/walker/dashboard');
         } finally {
             setLoading(false);
         }
@@ -212,11 +188,10 @@ const WalkInProgress = () => {
     const handlePhotoChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length + photos.length > 5) {
-            return alert("Máximo 5 fotos");
+            alert("Máximo 5 fotos permitidas por paseo.");
+            return;
         }
-
         setPhotos(prev => [...prev, ...files]);
-
         const previews = files.map(file => URL.createObjectURL(file));
         setPhotosPreview(prev => [...prev, ...previews]);
     };
@@ -228,15 +203,17 @@ const WalkInProgress = () => {
 
     const handleFinishWalk = async () => {
         const elapsedMins = Math.floor(elapsedTime / 60);
-        if (elapsedMins < assignment.walkRequest.durationMinutes && !reportData.earlyEndReason) {
-            return alert("El paseo duró menos de lo programado. Por favor indica el motivo del término anticipado.");
+        const requiredMins = assignment.walkRequest.durationMinutes;
+
+        if (elapsedMins < requiredMins && !reportData.earlyEndReason.trim()) {
+            return alert(`El tiempo transcurrido (${elapsedMins}m) es menor al programado (${requiredMins}m). Por favor, indica el motivo del término anticipado en el reporte.`);
         }
 
-        if (!window.confirm("¿Confirmas que el paseo ha terminado?")) return;
+        if (!window.confirm("¿Confirmas que has regresado a la mascota y deseas finalizar la misión?")) return;
 
         setLoading(true);
         try {
-            // 1. Upload Photos if any
+            // 1. Upload Photos first
             if (photos.length > 0) {
                 setUploadingPhotos(true);
                 const formData = new FormData();
@@ -246,13 +223,18 @@ const WalkInProgress = () => {
                 });
             }
 
-            // 2. Complete Walk
-            await api.put(`/walk-assignments/${id}/complete`, reportData);
+            // 2. Complete the Assignment
+            await api.put(`/walk-assignments/${id}/complete`, {
+                ...reportData,
+                didPee: !!reportData.didPee,
+                didPoop: !!reportData.didPoop
+            });
 
-            alert("¡Paseo finalizado! El dueño recibirá tu reporte.");
-            navigate(`/walk-requests/${assignment.walkRequestId}`);
+            alert("Misión cumplida. El reporte ha sido enviado al dueño.");
+            // NAVIGATION FIX: Use replace to avoid "push" issues if they try to go back
+            navigate(`/walk-requests/${assignment.walkRequestId}`, { replace: true });
         } catch (error) {
-            alert(error.response?.data?.error || "Error al finalizar el paseo");
+            alert(error.response?.data?.error || "Error al sincronizar el cierre de misión.");
         } finally {
             setLoading(false);
             setUploadingPhotos(false);
@@ -261,63 +243,46 @@ const WalkInProgress = () => {
 
     const handleCancelWalk = async () => {
         if (!cancelReason.trim()) return alert("El motivo es obligatorio");
-
         try {
             await api.put(`/walk-assignments/${id}/cancel`, { reason: cancelReason });
-            alert("Paseo cancelado correctamente");
-            navigate('/walker/dashboard');
+            navigate('/walker/dashboard', { replace: true });
         } catch (error) {
-            alert(error.response?.data?.error || "Error al cancelar");
+            alert(error.response?.data?.error || "Error al cancelar la misión.");
         }
     };
 
-    // ROBUST MOBILE DETECTION
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (window.innerWidth <= 800) ||
-        ('ontouchstart' in window);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 800);
 
-    // BLOCK DESKTOP USAGE (Instant check)
     if (!isMobile) {
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center font-sans tracking-tight">
-                <div className="max-w-md bg-white rounded-[32px] p-10 shadow-2xl space-y-8">
-                    <div className="relative inline-block">
-                        <div className="text-7xl">📱</div>
-                        <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg">✕</div>
-                    </div>
-                    <div className="space-y-3">
-                        <h2 className="text-3xl font-black text-gray-900">ACCESO MÓVIL</h2>
-                        <p className="text-gray-500 font-medium leading-relaxed">
-                            Para garantizar un rastreo preciso y la seguridad total de la mascota,
-                            esta sección solo está disponible desde tu <strong>dispositivo móvil</strong>.
-                        </p>
-                    </div>
-                    <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex items-center gap-4 text-left">
-                        <div className="bg-blue-600 text-white rounded-xl p-3 text-xl shadow-md">🛰️</div>
-                        <p className="text-sm text-blue-900 font-bold leading-tight">
-                            Necesitamos sensores de movimiento y señal satelital real para certificar el paseo.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => navigate('/walker/dashboard')}
-                        className="w-full bg-gray-900 hover:bg-black text-white py-5 rounded-2xl font-black text-lg transition-all active:scale-95 shadow-xl"
-                    >
-                        Volver al Panel
-                    </button>
-                    <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Seguridad Certificada DogWalk</p>
+            <div className="min-h-screen bg-navy-900 flex items-center justify-center p-6 text-center">
+                <div className="max-w-md bg-white rounded-[40px] p-10 shadow-2xl space-y-8 animate-fadeIn">
+                    <div className="text-7xl">📱</div>
+                    <h2 className="text-3xl font-black text-navy-900 tracking-tight uppercase italic">Protocolo Móvil</h2>
+                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest leading-relaxed">
+                        Esta sección requiere sensores GPS activos. Accede desde tu dispositivo móvil certificado.
+                    </p>
+                    <button onClick={() => navigate('/walker/dashboard')} className="btn-navy w-full">Volver a Base</button>
                 </div>
             </div>
         );
     }
 
-    if (loading && !assignment) return <div className="text-center py-20 font-bold text-gray-500 animate-pulse">Cargando paseo...</div>;
+    if (loading && !assignment) return (
+        <div className="h-screen bg-navy-900 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-primary-500/20 border-t-primary-600 rounded-full animate-spin"></div>
+                <p className="text-white/30 font-black text-[9px] uppercase tracking-widest">Sincronizando Satélites...</p>
+            </div>
+        </div>
+    );
 
     const isEarly = Math.floor(elapsedTime / 60) < (assignment?.walkRequest?.durationMinutes || 0);
 
     return (
-        <div className="relative h-screen w-full overflow-hidden bg-gray-100 font-sans">
-            {/* BACKGROUND MAP */}
-            <div className="absolute inset-0 z-0">
+        <div className="relative h-screen w-full overflow-hidden bg-slate-900 font-['Inter']">
+            {/* Background Map */}
+            <div className="absolute inset-0 z-0 opacity-80">
                 {isLoaded && (
                     <GoogleMap
                         mapContainerStyle={mapContainerStyle}
@@ -327,224 +292,132 @@ const WalkInProgress = () => {
                         onDragStart={() => setIsFollowing(false)}
                     >
                         {currentPos && (
-                            <>
-                                <Marker
-                                    position={currentPos}
-                                    icon={{
-                                        url: "https://img.icons8.com/ios-filled/100/3B82F6/dog.png", // Perro azul profesional
-                                        scaledSize: { width: 40, height: 40 },
-                                        anchor: { x: 20, y: 20 }
-                                    }}
-                                />
-                                {/* Pulsing Ring Effect */}
-                                <Marker
-                                    position={currentPos}
-                                    icon={{
-                                        path: window.google.maps.SymbolPath.CIRCLE,
-                                        fillColor: '#3B82F6',
-                                        fillOpacity: 0.15,
-                                        strokeWeight: 0,
-                                        scale: 30,
-                                    }}
-                                />
-                            </>
+                            <Marker position={currentPos} icon={{ url: "https://img.icons8.com/ios-filled/100/FF6B00/dog.png", scaledSize: { width: 40, height: 40 }, anchor: { x: 20, y: 20 } }} />
                         )}
-                        <Polyline
-                            path={localRoute}
-                            options={{ strokeColor: '#3B82F6', strokeWeight: 6, strokeOpacity: 0.8 }}
-                        />
+                        <Polyline path={localRoute} options={{ strokeColor: '#FF6B00', strokeWeight: 6, strokeOpacity: 0.7 }} />
                     </GoogleMap>
                 )}
             </div>
 
-            {/* OVERLAY: Status Center */}
-            <div className="absolute top-0 inset-x-0 p-4 z-20 space-y-2">
-                <div className="max-w-xl mx-auto flex justify-between items-start">
-                    {/* Signal & Connection */}
+            {/* Status Layer */}
+            <div className="absolute top-0 inset-x-0 p-4 z-20">
+                <div className="max-w-xl mx-auto flex justify-between items-start gap-4">
                     <div className="flex flex-col gap-2">
                         {isOffline && (
-                            <div className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black shadow-lg animate-pulse">
-                                SIN CONEXIÓN
-                            </div>
+                            <div className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-2xl animate-pulse">OFFLINE</div>
                         )}
-                        <div className={`bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border-2 ${signalQuality === 'EXCELENTE' ? 'border-green-500' : signalQuality === 'BUENA' ? 'border-yellow-500' : 'border-red-500'} flex items-center gap-2`}>
-                            <span className={`w-2 h-2 rounded-full ${signalQuality === 'EXCELENTE' ? 'bg-green-500' : signalQuality === 'BUENA' ? 'bg-yellow-500' : 'bg-red-500'} animate-ping`}></span>
-                            <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter">GPS: {signalQuality}</span>
+                        <div className="bg-navy-900/90 backdrop-blur-2xl px-4 py-2 rounded-full shadow-2xl border border-white/10 flex items-center gap-3">
+                            <span className={`w-2 h-2 rounded-full ${signalQuality === 'EXCELENTE' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`}></span>
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">{signalQuality}</span>
                         </div>
                     </div>
 
-                    {/* Timer Card */}
-                    <div className="bg-primary-600 text-white px-6 py-3 rounded-[32px] shadow-2xl border-2 border-white/20 flex flex-col items-center min-w-[120px]">
-                        <span className="text-2xl font-mono font-black tracking-widest">{formatTime(elapsedTime)}</span>
-                        <span className="text-[8px] font-black opacity-60 uppercase tracking-widest">Tiempo de Paseo</span>
+                    <div className="bg-primary-600 text-white px-6 py-3 rounded-[24px] shadow-2xl border-4 border-white/20 flex flex-col items-center min-w-[110px]">
+                        <span className="text-2xl font-black tracking-tighter italic leading-none mb-1">{formatTime(elapsedTime)}</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-70">En Misión</span>
                     </div>
                 </div>
             </div>
 
-            {/* FLOATING ACTION: Re-center */}
-            {!isFollowing && currentPos && (
-                <button
-                    onClick={() => setIsFollowing(true)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white w-12 h-12 rounded-full shadow-2xl border-2 border-primary-100 flex items-center justify-center text-xl z-20 hover:scale-110 active:scale-95 transition-all"
-                >
-                    🎯
-                </button>
+            {/* Re-center */}
+            {!isFollowing && (
+                <button onClick={() => setIsFollowing(true)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white w-12 h-12 rounded-[16px] shadow-2xl flex items-center justify-center text-xl z-20 border border-slate-100 transition-all active:scale-95">🎯</button>
             )}
 
-            {/* BOTTOM SHEET: Dog Info & Controls */}
+            {/* Control Sheet */}
             <div className="absolute bottom-0 inset-x-0 z-30 pointer-events-none">
                 <div className="max-w-xl mx-auto px-4 pb-4 pointer-events-auto">
-                    <div className="bg-white rounded-[48px] shadow-2xl border-t border-gray-100 overflow-hidden max-h-[70vh] flex flex-col">
-                        {/* Drag Handle */}
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto my-3 flex-shrink-0" />
+                    <div className="bg-white rounded-[32px] shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-slate-100 overflow-hidden max-h-[70vh] flex flex-col animate-fadeIn">
+                        <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto my-3" />
 
                         <div className="overflow-y-auto px-6 pb-6 space-y-6">
-                            {/* Dog & Owner Info */}
-                            <div className="flex items-center gap-4">
-                                {assignment.walkRequest.dog.photoUrl ? (
-                                    <img src={getImageUrl(assignment.walkRequest.dog.photoUrl)} className="w-16 h-16 rounded-[24px] object-cover shadow-md" alt="Dog" />
-                                ) : (
-                                    <div className="w-16 h-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-3xl">🐕</div>
-                                )}
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 bg-slate-50 rounded-[20px] flex items-center justify-center text-3xl shadow-inner border border-slate-100">
+                                    {assignment.walkRequest.dog.photoUrl ? (
+                                        <img src={getImageUrl(assignment.walkRequest.dog.photoUrl)} className="w-full h-full rounded-[20px] object-cover" alt="D" />
+                                    ) : '🐕'}
+                                </div>
                                 <div className="flex-1">
-                                    <h2 className="text-xl font-black text-gray-800 leading-none mb-1">{assignment.walkRequest.dog.name}</h2>
-                                    <p className="text-xs font-bold text-primary-600">{assignment.walkRequest.dog.breed || 'Raza mix'} • {assignment.walkRequest.dog.size}</p>
+                                    <h2 className="text-xl font-black text-navy-900 tracking-tighter uppercase leading-none mb-1">{assignment.walkRequest.dog.name}</h2>
+                                    <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest">{assignment.walkRequest.dog.breed || 'DogWalk Pro'}</p>
                                 </div>
-                                <a href={`tel:${assignment.walkRequest.owner.phone}`} className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-xl shadow-inner text-green-600">
-                                    📞
-                                </a>
+                                <a href={`tel:${assignment.walkRequest.owner.phone}`} className="w-12 h-12 bg-emerald-50 rounded-[16px] flex items-center justify-center text-xl shadow-inner text-emerald-600 active:scale-90 transition-all">📞</a>
                             </div>
 
-                            {/* Signal Warning Overlay (Inside bottom sheet if bad accuracy) */}
-                            {isLowAccuracy && (
-                                <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-4 flex gap-3 animate-fadeIn">
-                                    <span className="text-2xl">🚧</span>
-                                    <div>
-                                        <p className="text-red-900 font-extrabold text-xs uppercase mb-1">Señal poco confiable</p>
-                                        <p className="text-red-700 text-[10px] leading-tight font-medium">Uber/InDrive recomiendan usar tu celular al aire libre para mejorar la ubicación.</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Quick Actions (Report) */}
                             <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setReportData({ ...reportData, didPee: !reportData.didPee })}
-                                    className={`p-4 rounded-[28px] border-2 transition-all flex items-center justify-center gap-3 ${reportData.didPee ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
-                                >
+                                <button onClick={() => setReportData({ ...reportData, didPee: !reportData.didPee })} className={`py-4 rounded-[20px] border-2 transition-all flex flex-col items-center gap-1 ${reportData.didPee ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-slate-50 bg-slate-50 text-slate-300'}`}>
                                     <span className="text-2xl">💦</span>
-                                    <span className="font-black text-xs uppercase">Pipí</span>
+                                    <span className="font-black text-[9px] uppercase tracking-widest">Pipí</span>
                                 </button>
-                                <button
-                                    onClick={() => setReportData({ ...reportData, didPoop: !reportData.didPoop })}
-                                    className={`p-4 rounded-[28px] border-2 transition-all flex items-center justify-center gap-3 ${reportData.didPoop ? 'border-amber-700 bg-amber-50 text-amber-900' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
-                                >
+                                <button onClick={() => setReportData({ ...reportData, didPoop: !reportData.didPoop })} className={`py-4 rounded-[20px] border-2 transition-all flex flex-col items-center gap-1 ${reportData.didPoop ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-slate-50 bg-slate-50 text-slate-300'}`}>
                                     <span className="text-2xl">💩</span>
-                                    <span className="font-black text-xs uppercase">Popó</span>
+                                    <span className="font-black text-[9px] uppercase tracking-widest">Popó</span>
                                 </button>
                             </div>
 
-                            {/* Full Report Toggle / Expandable */}
-                            <details className="group">
-                                <summary className="flex justify-between items-center cursor-pointer list-none py-2 px-2 rounded-2xl bg-gray-50 mb-4">
-                                    <span className="text-xs font-black text-gray-500 uppercase">Ver Reporte Completo</span>
-                                    <span className="transition-transform group-open:rotate-180">▼</span>
+                            <details className="group" open={isEarly}>
+                                <summary className="flex justify-between items-center cursor-pointer list-none py-3 px-5 rounded-[16px] bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reporte Táctico</span>
+                                    <span className="transition-transform group-open:rotate-180 text-slate-400 text-[10px]">▼</span>
                                 </summary>
-                                <div className="space-y-6 pt-2 animate-slideDown">
-                                    {/* Behavior */}
+                                <div className="space-y-6 pt-5 animate-fadeIn">
                                     <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3">Estado de {assignment.walkRequest.dog.name}</label>
-                                        <div className="flex bg-gray-50 p-1 rounded-2xl">
+                                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Comportamiento</label>
+                                        <div className="flex bg-slate-50 p-1 rounded-[14px] border border-slate-100">
                                             {['BUENO', 'NORMAL', 'DIFICIL'].map(r => (
-                                                <button
-                                                    key={r}
-                                                    onClick={() => setReportData({ ...reportData, behaviorRating: r })}
-                                                    className={`flex-1 py-3 text-[10px] font-black rounded-xl transition-all ${reportData.behaviorRating === r ? 'bg-white shadow-md text-primary-600' : 'text-gray-400'}`}
-                                                >
-                                                    {r}
-                                                </button>
+                                                <button key={r} onClick={() => setReportData({ ...reportData, behaviorRating: r })} className={`flex-1 py-3 text-[9px] font-black rounded-[10px] transition-all ${reportData.behaviorRating === r ? 'bg-white shadow-md text-primary-600' : 'text-slate-400 opacity-60'}`}>{r}</button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    {/* Photo Upload */}
                                     <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 px-2">Fotos del Paseo ({photos.length}/5)</label>
-                                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                                            {photosPreview.length > 0 && photosPreview.map((src, i) => (
+                                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Fotos ({photos.length}/5)</label>
+                                        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                                            {photosPreview.map((src, i) => (
                                                 <div key={i} className="relative flex-shrink-0">
-                                                    <img src={src} className="w-16 h-16 object-cover rounded-xl border" alt="Preview" />
-                                                    <button onClick={() => removePhoto(i)} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[8px] font-bold">✕</button>
+                                                    <img src={src} className="w-20 h-20 object-cover rounded-[16px] border-2 border-white shadow-md" alt="P" />
+                                                    <button onClick={() => removePhoto(i)} className="absolute -top-1.5 -right-1.5 bg-navy-900 text-white w-6 h-6 rounded-full text-[10px] flex items-center justify-center font-black shadow-lg">✕</button>
                                                 </div>
                                             ))}
-                                            <button
-                                                onClick={() => fileInputRef.current.click()}
-                                                className="w-16 h-16 flex-shrink-0 bg-white border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400"
-                                            >
-                                                ➕
-                                            </button>
+                                            {photos.length < 5 && (
+                                                <button onClick={() => fileInputRef.current.click()} className="w-20 h-20 flex-shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[16px] flex items-center justify-center text-2xl text-slate-300 hover:text-primary-600 transition-all">➕</button>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <textarea
-                                        className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                        rows="2"
-                                        placeholder="Alguna nota extra para el dueño..."
-                                        value={reportData.reportNotes}
-                                        onChange={e => setReportData({ ...reportData, reportNotes: e.target.value })}
-                                    />
+                                    <textarea className="input-field min-h-[80px] !py-4 !text-xs" placeholder="Notas del paseo..." value={reportData.reportNotes} onChange={e => setReportData({ ...reportData, reportNotes: e.target.value })} />
 
                                     {isEarly && (
-                                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl">
-                                            <p className="text-[10px] font-black text-orange-700 uppercase mb-2">⚠️ Motivo Fin Anticipado</p>
-                                            <textarea
-                                                className="w-full bg-white border border-orange-100 rounded-xl p-2 text-xs"
-                                                value={reportData.earlyEndReason}
-                                                onChange={e => setReportData({ ...reportData, earlyEndReason: e.target.value })}
-                                            />
+                                        <div className="p-4 bg-amber-50 rounded-[20px] border-2 border-amber-200/40">
+                                            <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2 italic">⚠️ Cierre Anticipado</p>
+                                            <textarea className="w-full bg-white border-none rounded-[12px] p-3 text-[10px] font-bold text-navy-900 focus:ring-1 focus:ring-amber-500" placeholder="Indica el motivo (ej: lluvia intensa)..." value={reportData.earlyEndReason} onChange={e => setReportData({ ...reportData, earlyEndReason: e.target.value })} />
                                         </div>
                                     )}
                                 </div>
                             </details>
 
-                            {/* Main Action Button */}
-                            <div className="pt-2">
-                                <button
-                                    onClick={handleFinishWalk}
-                                    disabled={loading || isOffline}
-                                    className="w-full bg-primary-600 text-white font-black py-4 rounded-[32px] text-lg shadow-xl shadow-primary-200 active:scale-95 disabled:opacity-50 transition-all"
-                                >
-                                    {loading ? 'Subiendo reporte...' : '🏁 FINALIZAR PASEO'}
+                            <div className="space-y-3 pt-2">
+                                <button onClick={handleFinishWalk} disabled={loading || isOffline} className="btn-primary w-full py-5 !rounded-[24px] shadow-primary-500/20 text-lg uppercase tracking-tighter">
+                                    {loading ? 'Sincronizando...' : 'Finalizar Paseo 🏁'}
                                 </button>
-                                <button
-                                    onClick={() => setShowCancelModal(true)}
-                                    className="w-full text-gray-400 font-bold py-4 text-xs hover:text-red-500 transition-colors"
-                                >
-                                    Reportar Emergencia / Cancelar
-                                </button>
+                                <button onClick={() => setShowCancelModal(true)} className="w-full text-[8px] font-black text-slate-400 uppercase tracking-widest py-2 hover:text-red-500 transition-colors">Emergencia / Abortar</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Invisibility Layer for Input */}
             <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handlePhotoChange} />
 
-            {/* Cancel Modal (unchanged but standard) */}
             {showCancelModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/40">
-                    <div className="bg-white rounded-[40px] p-8 w-full max-w-sm shadow-2xl">
-                        <h2 className="text-2xl font-black text-gray-800 mb-2">Emergencia</h2>
-                        <textarea
-                            className="w-full bg-gray-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-red-500 mb-6"
-                            placeholder="Describe qué sucedió..."
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                        />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-navy-900/40 transition-all">
+                    <div className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl animate-fadeIn">
+                        <h2 className="text-2xl font-black text-navy-900 mb-2 uppercase italic">Abortar.</h2>
+                        <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest mb-6">Indica el motivo de fuerza mayor.</p>
+                        <textarea className="input-field min-h-[100px] mb-6" placeholder="Escribe aquí..." value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
                         <div className="flex gap-4">
-                            <button onClick={() => setShowCancelModal(false)} className="flex-1 font-bold text-gray-400">Volver</button>
-                            <button onClick={handleCancelWalk} className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold">CANCELAR</button>
+                            <button onClick={() => setShowCancelModal(false)} className="flex-1 font-black text-slate-400 uppercase text-[9px] tracking-widest">Volver</button>
+                            <button onClick={handleCancelWalk} className="flex-1 py-4 bg-red-600 text-white rounded-[16px] font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Confirmar</button>
                         </div>
                     </div>
                 </div>
@@ -554,4 +427,3 @@ const WalkInProgress = () => {
 };
 
 export default WalkInProgress;
-
