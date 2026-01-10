@@ -271,7 +271,34 @@ const WalkInProgress = () => {
         }
     };
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     if (loading && !assignment) return <div className="text-center py-20">Cargando paseo...</div>;
+
+    // BLOCK DESKTOP USAGE
+    if (!isMobile) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center">
+                <div className="max-w-md bg-white rounded-3xl p-8 shadow-2xl space-y-6">
+                    <div className="text-6xl text-blue-500">📱</div>
+                    <h2 className="text-2xl font-bold text-gray-800">Uso exclusivo en móvil</h2>
+                    <p className="text-gray-600 leading-relaxed">
+                        Para garantizar un seguimiento preciso por GPS y la seguridad de la mascota,
+                        los paseos en progreso solo pueden gestionarse desde un <strong>dispositivo móvil</strong>.
+                    </p>
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 italic text-sm text-blue-700">
+                        "Como Uber o inDrive, necesitamos satélites reales para funcionar."
+                    </div>
+                    <button
+                        onClick={() => navigate('/walker/dashboard')}
+                        className="w-full btn-primary py-4 rounded-2xl font-bold"
+                    >
+                        Volver al Panel
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const isEarly = Math.floor(elapsedTime / 60) < (assignment?.walkRequest?.durationMinutes || 0);
 
