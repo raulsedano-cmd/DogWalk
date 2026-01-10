@@ -64,13 +64,15 @@ export const markAllAsRead = async (req, res) => {
 // Internal service to create notifications
 export const createNotification = async ({ userId, type, title, message, link }) => {
     try {
+        // Workaround: Append link to message since 'link' column is missing in DB
+        const finalMessage = link ? `${message}|LINK:${link}` : message;
+
         return await prisma.notification.create({
             data: {
                 userId,
                 type,
                 title,
-                message
-                // Note: 'link' removed as column doesn't exist in DB
+                message: finalMessage
             },
         });
     } catch (error) {

@@ -9,11 +9,22 @@ const NotificationDropdown = () => {
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
 
+    const parseNotification = (n) => {
+        if (!n.message) return { ...n, link: null };
+        const parts = n.message.split('|LINK:');
+        return {
+            ...n,
+            message: parts[0],
+            link: parts[1] || null
+        };
+    };
+
     const fetchNotifications = async () => {
         try {
             const data = await notificationService.getNotifications();
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.isRead).length);
+            const parsedData = data.map(parseNotification);
+            setNotifications(parsedData);
+            setUnreadCount(parsedData.filter(n => !n.isRead).length);
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
@@ -37,6 +48,11 @@ const NotificationDropdown = () => {
     }, []);
 
     const handleNotificationClick = async (notif) => {
+        // If link exists, navigate.
+        if (notif.link) {
+            navigate(notif.link);
+        }
+
         if (!notif.isRead) {
             try {
                 await notificationService.markAsRead(notif.id);
@@ -47,9 +63,6 @@ const NotificationDropdown = () => {
             }
         }
         setIsOpen(false);
-        if (notif.link) {
-            navigate(notif.link);
-        }
     };
 
     const handleMarkAllAsRead = async () => {
