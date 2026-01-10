@@ -25,12 +25,7 @@ export const getWalkRequests = async (req, res) => {
                 select: { isAvailable: true, latitude: true, longitude: true, serviceRadiusKm: true, baseCity: true, baseZone: true }
             });
 
-            if (!walker.isAvailable) {
-                return res.json({
-                    requests: [],
-                    pagination: { total: 0, page: parseInt(page), limit: parseInt(limit), pages: 0 }
-                });
-            }
+            // Removed strict isAvailable check to allow browsing the market while offline
 
             // PRECISION FILTERING: Priority logic
             if (city || zone) {
