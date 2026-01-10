@@ -48,7 +48,7 @@ const WalkRequestDetail = () => {
                 }
             };
             fetchRoute(); // Initial call
-            interval = setInterval(fetchRoute, 5000); // 5 sec poll
+            interval = setInterval(fetchRoute, 4000); // 4 sec poll for snappier feel
         }
         return () => clearInterval(interval);
     }, [request]);
@@ -316,7 +316,7 @@ const WalkRequestDetail = () => {
                                     <GoogleMap
                                         mapContainerStyle={mapContainerStyle}
                                         center={routePath.length > 0 ? routePath[routePath.length - 1] : { lat: request.latitude, lng: request.longitude }}
-                                        zoom={17}
+                                        zoom={18}
                                         options={{
                                             streetViewControl: false,
                                             mapTypeControl: false,
@@ -333,13 +333,22 @@ const WalkRequestDetail = () => {
                                                 options={{
                                                     strokeColor: '#3B82F6', // Blue-500
                                                     strokeOpacity: 0.8,
-                                                    strokeWeight: 5,
+                                                    strokeWeight: 6,
                                                 }}
                                             />
                                         )}
 
                                         {/* Current Walker Pos */}
-                                        {routePath.length > 0 && <Marker position={routePath[routePath.length - 1]} label="🐕" />}
+                                        {routePath.length > 0 && (
+                                            <Marker
+                                                position={routePath[routePath.length - 1]}
+                                                icon={{
+                                                    url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                                                    scaledSize: { width: 40, height: 40 }
+                                                }}
+                                                label="🐕"
+                                            />
+                                        )}
                                     </GoogleMap>
                                 ) : (
                                     <div className="h-full w-full bg-gray-200 animate-pulse flex items-center justify-center">

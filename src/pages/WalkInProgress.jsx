@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getImageUrl } from '../services/api';
+import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
+
+const mapContainerStyle = {
+    width: '100%',
+    height: '100%',
+};
+
+const libraries = ['places'];
 
 const WalkInProgress = () => {
     const { id } = useParams();
@@ -16,6 +24,13 @@ const WalkInProgress = () => {
     const [photos, setPhotos] = useState([]);
     const [photosPreview, setPhotosPreview] = useState([]);
     const fileInputRef = useRef();
+    const [localRoute, setLocalRoute] = useState([]);
+    const [currentPos, setCurrentPos] = useState(null);
+
+    const { isLoaded } = useJsApiLoader({
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+        libraries,
+    });
 
     const [reportData, setReportData] = useState({
         didPee: false,
@@ -42,42 +57,43 @@ const WalkInProgress = () => {
         return () => clearInterval(interval);
     }, [assignment]);
 
-    // Live Tracking Logic (Side Effect separately to keep timer clean)
+    // Live Tracking Logic (Improved with watchPosition)
     useEffect(() => {
-        let trackingInterval;
+        let watchId;
+        let lastSentTime = 0;
 
         const sendLocation = async (lat, lng) => {
             if (!assignment || assignment.status !== 'IN_PROGRESS') return;
             try {
-                await api.post(`/walk-assignments/${id}/location`, { latitude: lat, longitude: lng });
-                // console.log('📍 Location sent:', lat, lng);
+                // Throttle server updates to every 7 seconds to avoid noise, but keep local map real-time
+                const now = Date.now();
+                if (now - lastSentTime > 7000) {
+                    await api.post(`/walk-assignments/${id}/location`, { latitude: lat, longitude: lng });
+                    lastSentTime = now;
+                }
             } catch (error) {
                 console.error('Error sending location:', error);
             }
         };
 
         if (assignment && assignment.status === 'IN_PROGRESS') {
-            // Polling GPS every 10 seconds
-            trackingInterval = setInterval(() => {
-                if ('geolocation' in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => sendLocation(pos.coords.latitude, pos.coords.longitude),
-                        (err) => console.warn("GPS Warn", err),
-                        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-                    );
-                }
-            }, 10000);
-
-            // Initial send immediately
             if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => sendLocation(pos.coords.latitude, pos.coords.longitude),
+                watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        const newPoint = { lat: latitude, lng: longitude };
+                        setCurrentPos(newPoint);
+                        setLocalRoute(prev => [...prev.slice(-50), newPoint]); // Keep last 50 points locally
+                        sendLocation(latitude, longitude);
+                    },
                     (err) => console.warn("GPS Warn", err),
-                    { enableHighAccuracy: true }
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                 );
             }
         }
-        return () => clearInterval(trackingInterval);
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
     }, [assignment, id]);
 
     const loadAssignment = async () => {
@@ -196,6 +212,42 @@ const WalkInProgress = () => {
             </div>
 
             <div className="max-w-xl mx-auto px-4 mt-6 space-y-6">
+
+                {/* Live Tracker Map */}
+                <div className="h-48 w-full bg-white rounded-[40px] shadow-2xl overflow-hidden border-2 border-primary-400/20 relative">
+                    {isLoaded && currentPos ? (
+                        <GoogleMap
+                            mapContainerStyle={mapContainerStyle}
+                            center={currentPos}
+                            zoom={18}
+                            options={{
+                                streetViewControl: false,
+                                mapTypeControl: false,
+                                zoomControl: false,
+                                fullscreenControl: false,
+                                styles: [{ featureType: "all", elementType: "labels", stylers: [{ visibility: "on" }] }]
+                            }}
+                        >
+                            <Marker position={currentPos} icon={{
+                                url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                                scaledSize: { width: 40, height: 40 }
+                            }} />
+                            <Polyline
+                                path={localRoute}
+                                options={{ strokeColor: '#3B82F6', strokeWeight: 5, strokeOpacity: 0.8 }}
+                            />
+                        </GoogleMap>
+                    ) : (
+                        <div className="h-full w-full flex flex-col items-center justify-center text-primary-200">
+                            <span className="text-4xl animate-pulse whitespace-nowrap mb-2">📍 Capturando GPS...</span>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Sigue caminando por favor</p>
+                        </div>
+                    )}
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-primary-700 shadow-sm flex items-center gap-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+                        RASTREO EN VIVO
+                    </div>
+                </div>
 
                 {/* Dog Info & Instructions */}
                 <div className="bg-white rounded-[40px] p-6 shadow-2xl border border-primary-400/20 overflow-hidden">
