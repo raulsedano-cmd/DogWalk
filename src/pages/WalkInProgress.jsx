@@ -271,34 +271,45 @@ const WalkInProgress = () => {
         }
     };
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // ROBUST MOBILE DETECTION
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (window.innerWidth <= 800) ||
+        ('ontouchstart' in window);
 
-    if (loading && !assignment) return <div className="text-center py-20">Cargando paseo...</div>;
-
-    // BLOCK DESKTOP USAGE
+    // BLOCK DESKTOP USAGE (Instant check)
     if (!isMobile) {
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center">
-                <div className="max-w-md bg-white rounded-3xl p-8 shadow-2xl space-y-6">
-                    <div className="text-6xl text-blue-500">📱</div>
-                    <h2 className="text-2xl font-bold text-gray-800">Uso exclusivo en móvil</h2>
-                    <p className="text-gray-600 leading-relaxed">
-                        Para garantizar un seguimiento preciso por GPS y la seguridad de la mascota,
-                        los paseos en progreso solo pueden gestionarse desde un <strong>dispositivo móvil</strong>.
-                    </p>
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 italic text-sm text-blue-700">
-                        "Como Uber o inDrive, necesitamos satélites reales para funcionar."
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-center font-sans">
+                <div className="max-w-md bg-white rounded-[32px] p-10 shadow-2xl space-y-8">
+                    <div className="relative inline-block">
+                        <div className="text-7xl animate-bounce">📱</div>
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold border-4 border-white">✕</div>
+                    </div>
+                    <div className="space-y-3">
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">SOLO MÓVIL</h2>
+                        <p className="text-gray-500 font-medium leading-relaxed">
+                            Esta sección es una herramienta de precisión. Para garantizar el rastreo en tiempo real y la seguridad del perro, debes usar la **App de DogWalk** o el navegador de tu celular.
+                        </p>
+                    </div>
+                    <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex items-center gap-4 text-left">
+                        <div className="bg-blue-500 text-white rounded-full p-2 text-xl">🛰️</div>
+                        <p className="text-sm text-blue-800 font-semibold leading-tight">
+                            "Como Uber, necesitamos sensores de movimiento y satélites reales."
+                        </p>
                     </div>
                     <button
                         onClick={() => navigate('/walker/dashboard')}
-                        className="w-full btn-primary py-4 rounded-2xl font-bold"
+                        className="w-full bg-gray-900 hover:bg-black text-white py-5 rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg"
                     >
                         Volver al Panel
                     </button>
+                    <p className="text-xs text-gray-400">Si estás en un celular y ves esto, prueba girando la pantalla.</p>
                 </div>
             </div>
         );
     }
+
+    if (loading && !assignment) return <div className="text-center py-20">Cargando paseo...</div>;
 
     const isEarly = Math.floor(elapsedTime / 60) < (assignment?.walkRequest?.durationMinutes || 0);
 
