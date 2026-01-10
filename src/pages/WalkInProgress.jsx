@@ -6,7 +6,22 @@ import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/
 
 const mapContainerStyle = {
     width: '100%',
-    height: '100%',
+    height: '100vh',
+};
+
+const mapOptions = {
+    disableDefaultUI: true,
+    zoomControl: false,
+    styles: [
+        { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#7c93a3" }] },
+        { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [{ "color": "#c0c0c0" }] },
+        { "featureType": "landscape", "elementType": "geometry.fill", "stylers": [{ "color": "#f2f2f2" }] },
+        { "featureType": "landscape.man_made", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] },
+        { "featureType": "poi", "elementType": "geometry.fill", "stylers": [{ "color": "#d6e9d6" }] },
+        { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#ffffff" }] },
+        { "featureType": "road.highway", "elementType": "geometry.fill", "stylers": [{ "color": "#ffecb3" }] },
+        { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#b3d1ff" }] }
+    ]
 };
 
 const libraries = ['places'];
@@ -42,6 +57,19 @@ const WalkInProgress = () => {
     const [isLowAccuracy, setIsLowAccuracy] = useState(false);
     const [signalQuality, setSignalQuality] = useState('BUSCANDO'); // 'Pobre', 'Buena', 'Excelente'
     const lastCoordsRef = useRef(null);
+    const [isFollowing, setIsFollowing] = useState(true);
+    const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+    useEffect(() => {
+        const handleOnline = () => setIsOffline(false);
+        const handleOffline = () => setIsOffline(true);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     useEffect(() => {
         loadAssignment();
@@ -248,287 +276,239 @@ const WalkInProgress = () => {
     const isEarly = Math.floor(elapsedTime / 60) < (assignment?.walkRequest?.durationMinutes || 0);
 
     return (
-        <div className="min-h-screen bg-primary-600 pb-20">
-            {/* Header Sticky */}
-            <div className="bg-primary-700/80 backdrop-blur-md sticky top-0 z-30 p-4 border-b border-primary-500 shadow-lg">
-                <div className="max-w-xl mx-auto flex justify-between items-center text-white">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-2xl shadow-inner">🐕</div>
-                        <div>
-                            <h1 className="font-black text-lg leading-tight">{assignment.walkRequest.dog.name}</h1>
-                            <p className="text-xs text-primary-200">En paseo...</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-2xl font-mono font-black">{formatTime(elapsedTime)}</div>
-                        <div className="text-[10px] uppercase font-bold text-primary-300">Tiempo Real</div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-xl mx-auto px-4 mt-6 space-y-6">
-
-                {/* Live Tracker Map */}
-                <div className="h-48 w-full bg-white rounded-[40px] shadow-2xl overflow-hidden border-2 border-primary-400/20 relative">
-                    {isLoaded && currentPos ? (
-                        <GoogleMap
-                            mapContainerStyle={mapContainerStyle}
-                            center={currentPos}
-                            zoom={18}
-                            options={{
-                                streetViewControl: false,
-                                mapTypeControl: false,
-                                zoomControl: false,
-                                fullscreenControl: false,
-                                styles: [{ featureType: "all", elementType: "labels", stylers: [{ visibility: "on" }] }]
-                            }}
-                        >
-                            <Marker position={currentPos} icon={{
-                                url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                                scaledSize: { width: 40, height: 40 }
-                            }} />
-                            <Polyline
-                                path={localRoute}
-                                options={{ strokeColor: '#3B82F6', strokeWeight: 5, strokeOpacity: 0.8 }}
-                            />
-                        </GoogleMap>
-                    ) : (
-                        <div className="h-full w-full flex flex-col items-center justify-center text-primary-200">
-                            <span className="text-4xl animate-pulse whitespace-nowrap mb-2">📍 Capturando GPS...</span>
-                            <p className="text-[10px] font-black uppercase tracking-widest">Sigue caminando por favor</p>
-                        </div>
-                    )}
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-primary-700 shadow-sm flex items-center gap-1">
-                        <span className={`w-2 h-2 rounded-full ${signalQuality === 'EXCELENTE' ? 'bg-green-500' : signalQuality === 'BUENA' ? 'bg-yellow-500' : 'bg-red-500'} animate-ping`}></span>
-                        CALIDAD GPS: {signalQuality}
-                    </div>
-                    {currentPos && (
-                        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl text-[9px] font-mono text-white/80">
-                            {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
-                        </div>
-                    )}
-                    {isLowAccuracy && (
-                        <div className="absolute inset-0 bg-red-600/90 flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
-                            <span className="text-4xl mb-2">⚠️</span>
-                            <p className="text-white font-black text-sm uppercase mb-1">Señal de GPS Débil</p>
-                            <p className="text-white/80 text-[10px] leading-relaxed max-w-[200px]">
-                                Tu dispositivo actual está dando una ubicación poco precisa. Para un rastreo correcto,
-                                <span className="text-white font-black italic"> usa la aplicación en tu celular</span>.
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Dog Info & Instructions */}
-                <div className="bg-white rounded-[40px] p-6 shadow-2xl border border-primary-400/20 overflow-hidden">
-                    <div className="flex gap-4 items-center mb-6">
-                        {assignment.walkRequest.dog.photoUrl ? (
-                            <img src={getImageUrl(assignment.walkRequest.dog.photoUrl)} className="w-16 h-16 rounded-2xl object-cover shadow-md" alt="Dog" />
-                        ) : (
-                            <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">🐕</div>
+        <div className="relative h-screen w-full overflow-hidden bg-gray-100 font-sans">
+            {/* BACKGROUND MAP */}
+            <div className="absolute inset-0 z-0">
+                {isLoaded && (
+                    <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={currentPos || { lat: assignment?.walkRequest?.latitude || 0, lng: assignment?.walkRequest?.longitude || 0 }}
+                        zoom={18}
+                        options={mapOptions}
+                        onDragStart={() => setIsFollowing(false)}
+                    >
+                        {currentPos && (
+                            <>
+                                <Marker
+                                    position={currentPos}
+                                    icon={{
+                                        path: window.google.maps.SymbolPath.CIRCLE,
+                                        fillColor: '#3B82F6',
+                                        fillOpacity: 1,
+                                        strokeWeight: 3,
+                                        strokeColor: 'white',
+                                        scale: 8,
+                                    }}
+                                />
+                                {/* Pulsing Ring Effect (via CSS or extra circle) */}
+                                <Marker
+                                    position={currentPos}
+                                    icon={{
+                                        path: window.google.maps.SymbolPath.CIRCLE,
+                                        fillColor: '#3B82F6',
+                                        fillOpacity: 0.2,
+                                        strokeWeight: 0,
+                                        scale: 25,
+                                    }}
+                                />
+                            </>
                         )}
-                        <div className="flex-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Paseando a</p>
-                            <h2 className="text-xl font-black text-gray-800 leading-none">{assignment.walkRequest.dog.name}</h2>
-                            <p className="text-sm font-bold text-primary-600">{assignment.walkRequest.dog.breed || 'Raza mix'} • {assignment.walkRequest.dog.size}</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                        <div className="bg-gray-50 p-4 rounded-3xl text-center border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Dueño</p>
-                            <p className="font-bold text-gray-700 leading-tight mb-1">{assignment.walkRequest.owner.firstName}</p>
-                            <a href={`tel:${assignment.walkRequest.owner.phone}`} className="text-xs text-primary-600 font-extrabold flex items-center justify-center gap-1">
-                                📞 Llamar
-                            </a>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-3xl text-center border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Energía</p>
-                            <p className={`font-black ${assignment.walkRequest.dog.energyLevel === 'HIGH' ? 'text-red-500' :
-                                assignment.walkRequest.dog.energyLevel === 'MEDIUM' ? 'text-orange-500' : 'text-green-500'
-                                }`}>
-                                {assignment.walkRequest.dog.energyLevel}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Alertas Críticas de Manejo */}
-                    <div className="space-y-3">
-                        {(assignment.walkRequest.dog.reactiveWithDogs || assignment.walkRequest.dog.needsMuzzle || assignment.walkRequest.dog.pullsLeash) && (
-                            <div className="flex flex-wrap gap-2">
-                                {assignment.walkRequest.dog.reactiveWithDogs && <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse">REACTIVO A PERROS</span>}
-                                {assignment.walkRequest.dog.needsMuzzle && <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-full">USA BOZAL</span>}
-                                {assignment.walkRequest.dog.pullsLeash && <span className="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full">JALA CORREA</span>}
-                            </div>
-                        )}
-
-                        <div className="bg-primary-50 p-5 rounded-3xl border border-primary-100 shadow-inner">
-                            <span className="text-[10px] font-black text-primary-600 uppercase block mb-2 leading-none">📢 Notas del Dueño</span>
-                            <p className="text-sm text-primary-900 font-bold italic leading-relaxed">
-                                "{assignment.walkRequest.dog.notesForWalker || assignment.walkRequest.details || "Sin notas adicionales."}"
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Photo Upload Section */}
-                <div className="bg-white rounded-3xl p-6 shadow-2xl overflow-hidden">
-                    <h3 className="font-black text-gray-800 mb-4 flex items-center gap-2">
-                        📸 Fotos del Paseo
-                        <span className="text-xs font-normal text-gray-400">({photos.length}/5)</span>
-                    </h3>
-
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-                        {photosPreview.map((src, i) => (
-                            <div key={i} className="relative flex-shrink-0">
-                                <img src={src} className="w-24 h-24 object-cover rounded-2xl border shadow-sm" alt="Preview" />
-                                <button
-                                    onClick={() => removePhoto(i)}
-                                    className="absolute -top-1 -right-1 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold shadow-md"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ))}
-                        {photos.length < 5 && (
-                            <button
-                                onClick={() => fileInputRef.current.click()}
-                                className="w-24 h-24 flex-shrink-0 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-primary-400 transition-colors"
-                            >
-                                <span className="text-2xl">➕</span>
-                                <span className="text-[10px] font-bold">Subir</span>
-                            </button>
-                        )}
-                    </div>
-                    <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handlePhotoChange}
-                    />
-                </div>
-
-                {/* Report Form */}
-                <div className="bg-white rounded-3xl p-6 shadow-2xl space-y-6">
-                    <h3 className="font-black text-gray-800 text-xl border-b pb-4">Reporte del Paseo</h3>
-
-                    {/* Needs */}
-                    <div className="flex gap-4">
-                        <button
-                            onClick={() => setReportData({ ...reportData, didPee: !reportData.didPee })}
-                            className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${reportData.didPee ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
-                        >
-                            <span className="text-3xl">💦</span>
-                            <span className="font-black text-sm uppercase">Pipí</span>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${reportData.didPee ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200'}`}>
-                                {reportData.didPee && '✓'}
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setReportData({ ...reportData, didPoop: !reportData.didPoop })}
-                            className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${reportData.didPoop ? 'border-amber-700 bg-amber-50 text-amber-900' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
-                        >
-                            <span className="text-3xl">💩</span>
-                            <span className="font-black text-sm uppercase">Popó</span>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${reportData.didPoop ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-200'}`}>
-                                {reportData.didPoop && '✓'}
-                            </div>
-                        </button>
-                    </div>
-
-                    {/* Behavior */}
-                    <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-3">Comportamiento del Perro</label>
-                        <div className="flex bg-gray-50 p-1 rounded-2xl">
-                            {['BUENO', 'NORMAL', 'DIFICIL'].map(r => (
-                                <button
-                                    key={r}
-                                    onClick={() => setReportData({ ...reportData, behaviorRating: r })}
-                                    className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${reportData.behaviorRating === r ? 'bg-white shadow-md text-primary-600 scale-105 z-10' : 'text-gray-400'}`}
-                                >
-                                    {r}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-3">Notas adicionales</label>
-                        <textarea
-                            className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-gray-300"
-                            rows="3"
-                            placeholder="Ej: Estuvo muy activo y jugamos con pelotas..."
-                            value={reportData.reportNotes}
-                            onChange={e => setReportData({ ...reportData, reportNotes: e.target.value })}
+                        <Polyline
+                            path={localRoute}
+                            options={{ strokeColor: '#3B82F6', strokeWeight: 6, strokeOpacity: 0.8 }}
                         />
-                    </div>
-
-                    {/* Early End Reason (Conditional) */}
-                    {isEarly && (
-                        <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl animate-pulse-slow">
-                            <label className="block text-xs font-black text-orange-700 uppercase mb-3">⚠️ Motivo de Término Anticipado (Obligatorio)</label>
-                            <textarea
-                                className="w-full bg-white border-2 border-orange-100 rounded-xl p-3 text-sm focus:border-orange-400 outline-none"
-                                placeholder="Indica por qué terminó antes el paseo..."
-                                value={reportData.earlyEndReason}
-                                onChange={e => setReportData({ ...reportData, earlyEndReason: e.target.value })}
-                            />
-                            <p className="text-[10px] text-orange-600 mt-2 italic font-bold">El paseo duró menos de los {assignment.walkRequest.durationMinutes} min programados.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-4 pt-4">
-                    <button
-                        onClick={handleFinishWalk}
-                        disabled={loading}
-                        className="w-full bg-white text-primary-700 font-black py-5 rounded-3xl text-xl shadow-2xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
-                    >
-                        {loading ? 'Procesando...' : '🏁 FINALIZAR PASEO'}
-                    </button>
-
-                    <button
-                        onClick={() => setShowCancelModal(true)}
-                        className="w-full text-white/60 font-bold py-2 text-sm hover:text-white transition-colors"
-                    >
-                        Cancelar Paseo (Emergencia)
-                    </button>
-                </div>
-
+                    </GoogleMap>
+                )}
             </div>
 
-            {/* Cancel Modal */}
-            {showCancelModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50 overflow-y-auto">
-                    <div className="bg-white rounded-[40px] p-8 w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-2xl font-black text-gray-800 mb-2">Cancelar Paseo</h2>
-                        <p className="text-gray-500 text-sm mb-6">Esta acción es solo para emergencias. Se notificará al dueño.</p>
+            {/* OVERLAY: Status Center */}
+            <div className="absolute top-0 inset-x-0 p-4 z-20 space-y-2">
+                <div className="max-w-xl mx-auto flex justify-between items-start">
+                    {/* Signal & Connection */}
+                    <div className="flex flex-col gap-2">
+                        {isOffline && (
+                            <div className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black shadow-lg animate-pulse">
+                                SIN CONEXIÓN
+                            </div>
+                        )}
+                        <div className={`bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border-2 ${signalQuality === 'EXCELENTE' ? 'border-green-500' : signalQuality === 'BUENA' ? 'border-yellow-500' : 'border-red-500'} flex items-center gap-2`}>
+                            <span className={`w-2 h-2 rounded-full ${signalQuality === 'EXCELENTE' ? 'bg-green-500' : signalQuality === 'BUENA' ? 'bg-yellow-500' : 'bg-red-500'} animate-ping`}></span>
+                            <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter">GPS: {signalQuality}</span>
+                        </div>
+                    </div>
 
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-2">Motivo obligatorio</label>
+                    {/* Timer Card */}
+                    <div className="bg-primary-600 text-white px-6 py-3 rounded-[32px] shadow-2xl border-2 border-white/20 flex flex-col items-center min-w-[120px]">
+                        <span className="text-2xl font-mono font-black tracking-widest">{formatTime(elapsedTime)}</span>
+                        <span className="text-[8px] font-black opacity-60 uppercase tracking-widest">Tiempo de Paseo</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* FLOATING ACTION: Re-center */}
+            {!isFollowing && currentPos && (
+                <button
+                    onClick={() => setIsFollowing(true)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white w-12 h-12 rounded-full shadow-2xl border-2 border-primary-100 flex items-center justify-center text-xl z-20 hover:scale-110 active:scale-95 transition-all"
+                >
+                    🎯
+                </button>
+            )}
+
+            {/* BOTTOM SHEET: Dog Info & Controls */}
+            <div className="absolute bottom-0 inset-x-0 z-30 pointer-events-none">
+                <div className="max-w-xl mx-auto px-4 pb-4 pointer-events-auto">
+                    <div className="bg-white rounded-[48px] shadow-2xl border-t border-gray-100 overflow-hidden max-h-[70vh] flex flex-col">
+                        {/* Drag Handle */}
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto my-3 flex-shrink-0" />
+
+                        <div className="overflow-y-auto px-6 pb-6 space-y-6">
+                            {/* Dog & Owner Info */}
+                            <div className="flex items-center gap-4">
+                                {assignment.walkRequest.dog.photoUrl ? (
+                                    <img src={getImageUrl(assignment.walkRequest.dog.photoUrl)} className="w-16 h-16 rounded-[24px] object-cover shadow-md" alt="Dog" />
+                                ) : (
+                                    <div className="w-16 h-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-3xl">🐕</div>
+                                )}
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-black text-gray-800 leading-none mb-1">{assignment.walkRequest.dog.name}</h2>
+                                    <p className="text-xs font-bold text-primary-600">{assignment.walkRequest.dog.breed || 'Raza mix'} • {assignment.walkRequest.dog.size}</p>
+                                </div>
+                                <a href={`tel:${assignment.walkRequest.owner.phone}`} className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-xl shadow-inner text-green-600">
+                                    📞
+                                </a>
+                            </div>
+
+                            {/* Signal Warning Overlay (Inside bottom sheet if bad accuracy) */}
+                            {isLowAccuracy && (
+                                <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-4 flex gap-3 animate-fadeIn">
+                                    <span className="text-2xl">🚧</span>
+                                    <div>
+                                        <p className="text-red-900 font-extrabold text-xs uppercase mb-1">Señal poco confiable</p>
+                                        <p className="text-red-700 text-[10px] leading-tight font-medium">Uber/InDrive recomiendan usar tu celular al aire libre para mejorar la ubicación.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Quick Actions (Report) */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setReportData({ ...reportData, didPee: !reportData.didPee })}
+                                    className={`p-4 rounded-[28px] border-2 transition-all flex items-center justify-center gap-3 ${reportData.didPee ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
+                                >
+                                    <span className="text-2xl">💦</span>
+                                    <span className="font-black text-xs uppercase">Pipí</span>
+                                </button>
+                                <button
+                                    onClick={() => setReportData({ ...reportData, didPoop: !reportData.didPoop })}
+                                    className={`p-4 rounded-[28px] border-2 transition-all flex items-center justify-center gap-3 ${reportData.didPoop ? 'border-amber-700 bg-amber-50 text-amber-900' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
+                                >
+                                    <span className="text-2xl">💩</span>
+                                    <span className="font-black text-xs uppercase">Popó</span>
+                                </button>
+                            </div>
+
+                            {/* Full Report Toggle / Expandable */}
+                            <details className="group">
+                                <summary className="flex justify-between items-center cursor-pointer list-none py-2 px-2 rounded-2xl bg-gray-50 mb-4">
+                                    <span className="text-xs font-black text-gray-500 uppercase">Ver Reporte Completo</span>
+                                    <span className="transition-transform group-open:rotate-180">▼</span>
+                                </summary>
+                                <div className="space-y-6 pt-2 animate-slideDown">
+                                    {/* Behavior */}
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3">Estado de {assignment.walkRequest.dog.name}</label>
+                                        <div className="flex bg-gray-50 p-1 rounded-2xl">
+                                            {['BUENO', 'NORMAL', 'DIFICIL'].map(r => (
+                                                <button
+                                                    key={r}
+                                                    onClick={() => setReportData({ ...reportData, behaviorRating: r })}
+                                                    className={`flex-1 py-3 text-[10px] font-black rounded-xl transition-all ${reportData.behaviorRating === r ? 'bg-white shadow-md text-primary-600' : 'text-gray-400'}`}
+                                                >
+                                                    {r}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Photo Upload */}
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 px-2">Fotos del Paseo ({photos.length}/5)</label>
+                                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+                                            {photosPreview.length > 0 && photosPreview.map((src, i) => (
+                                                <div key={i} className="relative flex-shrink-0">
+                                                    <img src={src} className="w-16 h-16 object-cover rounded-xl border" alt="Preview" />
+                                                    <button onClick={() => removePhoto(i)} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[8px] font-bold">✕</button>
+                                                </div>
+                                            ))}
+                                            <button
+                                                onClick={() => fileInputRef.current.click()}
+                                                className="w-16 h-16 flex-shrink-0 bg-white border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400"
+                                            >
+                                                ➕
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <textarea
+                                        className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                        rows="2"
+                                        placeholder="Alguna nota extra para el dueño..."
+                                        value={reportData.reportNotes}
+                                        onChange={e => setReportData({ ...reportData, reportNotes: e.target.value })}
+                                    />
+
+                                    {isEarly && (
+                                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl">
+                                            <p className="text-[10px] font-black text-orange-700 uppercase mb-2">⚠️ Motivo Fin Anticipado</p>
+                                            <textarea
+                                                className="w-full bg-white border border-orange-100 rounded-xl p-2 text-xs"
+                                                value={reportData.earlyEndReason}
+                                                onChange={e => setReportData({ ...reportData, earlyEndReason: e.target.value })}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </details>
+
+                            {/* Main Action Button */}
+                            <div className="pt-2">
+                                <button
+                                    onClick={handleFinishWalk}
+                                    disabled={loading || isOffline}
+                                    className="w-full bg-primary-600 text-white font-black py-4 rounded-[32px] text-lg shadow-xl shadow-primary-200 active:scale-95 disabled:opacity-50 transition-all"
+                                >
+                                    {loading ? 'Subiendo reporte...' : '🏁 FINALIZAR PASEO'}
+                                </button>
+                                <button
+                                    onClick={() => setShowCancelModal(true)}
+                                    className="w-full text-gray-400 font-bold py-4 text-xs hover:text-red-500 transition-colors"
+                                >
+                                    Reportar Emergencia / Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Invisibility Layer for Input */}
+            <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handlePhotoChange} />
+
+            {/* Cancel Modal (unchanged but standard) */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/40">
+                    <div className="bg-white rounded-[40px] p-8 w-full max-w-sm shadow-2xl">
+                        <h2 className="text-2xl font-black text-gray-800 mb-2">Emergencia</h2>
                         <textarea
-                            className="input-field mb-6"
-                            placeholder="Explica qué sucedió..."
+                            className="w-full bg-gray-50 p-4 rounded-2xl border-none focus:ring-2 focus:ring-red-500 mb-6"
+                            placeholder="Describe qué sucedió..."
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
                         />
-
                         <div className="flex gap-4">
-                            <button
-                                onClick={() => setShowCancelModal(false)}
-                                className="flex-1 py-3 font-bold text-gray-400"
-                            >
-                                Volver
-                            </button>
-                            <button
-                                onClick={handleCancelWalk}
-                                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200"
-                            >
-                                CANCELAR
-                            </button>
+                            <button onClick={() => setShowCancelModal(false)} className="flex-1 font-bold text-gray-400">Volver</button>
+                            <button onClick={handleCancelWalk} className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold">CANCELAR</button>
                         </div>
                     </div>
                 </div>
